@@ -3,6 +3,9 @@ package devs.lair.nn;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -144,14 +147,25 @@ class MatrixUtilsTest {
         assertThatThrownBy(() -> MatrixUtils.checkConstantLength(motConstantLength))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        double[][] emtpyCols = new double[][] {{}, {}, {}};
+        double[][] emtpyCols = new double[][]{{}, {}, {}};
         assertThatThrownBy(() -> MatrixUtils.checkConstantLength(emtpyCols))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        double[][] ma = new double[][] {{2, 2}, {1, 1}};
-        double[][] mb = new double[][] {{1, 2}};
+        double[][] ma = new double[][]{{2, 2}, {1, 1}};
+        double[][] mb = new double[][]{{1, 2}};
 
         assertThatThrownBy(() -> MatrixUtils.checkCompatible(ma, mb))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Private constructor call (covergae test")
+    void callPrivateConstructorTest() throws NoSuchMethodException {
+        Constructor<MatrixUtils> pcc = MatrixUtils.class.getDeclaredConstructor();
+        pcc.setAccessible(true);
+
+        assertThatThrownBy(pcc::newInstance)
+                .isInstanceOf(InvocationTargetException.class);
+
     }
 }

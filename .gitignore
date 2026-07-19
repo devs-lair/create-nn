@@ -36,3 +36,12 @@ build/
 
 ### Mac OS ###
 .DS_Store
+
+.idea/
+.idea/*
+/.idea/.gitignore
+/.idea/encodings.xml
+/.idea/misc.xml
+
+.mvn
+.mvn/*

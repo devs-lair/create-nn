@@ -130,6 +130,33 @@ class MatrixUtilsTest {
         }
     }
 
+    @Test
+    @DisplayName("Transform to matrix test")
+    void transformToMatrix() {
+        double[] array = new double[]{1, 2, 3};
+        double[][] matrix = MatrixUtils.transformToMatrix(array);
+
+        assertThat(matrix).hasDimensions(3, 1);
+
+        assertThat(matrix[0][0]).isEqualTo(1);
+        assertThat(matrix[1][0]).isEqualTo(2);
+        assertThat(matrix[2][0]).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("Apply function to matrix")
+    void applyFunction() {
+        double[][] matrix = new double[][]{{2, 2}, {3, 3}};
+
+        double[][] applied = MatrixUtils.applyFunction(matrix, (x) -> x * 2);
+        assertThat(applied).hasDimensions(2, 2);
+
+        assertThat(applied[0][0]).isEqualTo(4);
+        assertThat(applied[0][1]).isEqualTo(4);
+        assertThat(applied[1][0]).isEqualTo(6);
+        assertThat(applied[1][1]).isEqualTo(6);
+    }
+
     //==== Negative Test ====
 
     @Test

@@ -1,5 +1,7 @@
 package devs.lair.nn;
 
+import java.util.function.DoubleFunction;
+
 public class MatrixUtils {
 
     private MatrixUtils() {
@@ -76,7 +78,7 @@ public class MatrixUtils {
         checkConstantLength(mb);
 
         if (ma[0].length != mb.length) {
-            throw new IllegalArgumentException("Matrix not compatible");
+            throw new IllegalArgumentException("Matrices not compatible");
         }
     }
 
@@ -102,12 +104,33 @@ public class MatrixUtils {
 
             if (constantLength != m[i].length ) {
                 throw new IllegalArgumentException(
-                        "Martix not constant size, wrong row with index = %d".formatted(i));
+                        "Martix has an inconstant size, wrong row with index = %d".formatted(i));
             }
         }
 
         if (constantLength == 0) {
             throw new IllegalArgumentException("Matrix has empty rows");
         }
+    }
+
+    public static double[][] transformToMatrix(double[] inputs) {
+        double[][] matrix = new double[inputs.length][1];
+        for (int i = 0; i < matrix.length; i++) {
+            matrix[i][0] = inputs[i];
+        }
+
+        return matrix;
+    }
+
+    public static double[][] applyFunction(double[][] matrix, DoubleFunction<Double> doubleFunction) {
+        double[][] result = new double[matrix.length][matrix[0].length];
+
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                result[i][j] = doubleFunction.apply(matrix[i][j]);
+            }
+        }
+
+        return result;
     }
 }

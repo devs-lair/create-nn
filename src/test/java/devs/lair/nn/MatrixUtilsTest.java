@@ -157,6 +157,62 @@ class MatrixUtilsTest {
         assertThat(applied[1][1]).isEqualTo(6);
     }
 
+    @Test
+    @DisplayName("Subtract matrix")
+    void subtractMatrix() {
+        double[][] a = new double[][] {{3, 3},{2, 2},{1, 1}};
+        double[][] b = new double[][] {{1, 1},{1, 1},{1, 1}};
+        double[][] c = MatrixUtils.subtract(a, b);
+
+        assertThat(c).hasDimensions(3, 2);
+
+        assertThat(c[0][0]).isEqualTo(2);
+        assertThat(c[0][1]).isEqualTo(2);
+        assertThat(c[1][0]).isEqualTo(1);
+        assertThat(c[1][1]).isEqualTo(1);
+        assertThat(c[2][0]).isEqualTo(0);
+        assertThat(c[2][1]).isEqualTo(0);
+
+        assertThatThrownBy(() -> MatrixUtils.subtract(new double[][] {{1}, {2}},
+                        new double[][] {{1}, {2}, {3}}))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Add matrix")
+    void addMatrix() {
+        double[][] a = new double[][] {{3, 3},{2, 2},{1, 1}};
+        double[][] b = new double[][] {{1, 1},{1, 1},{1, 1}};
+        double[][] c = MatrixUtils.add(a, b);
+
+        assertThat(c).hasDimensions(3, 2);
+
+        assertThat(c[0][0]).isEqualTo(4);
+        assertThat(c[0][1]).isEqualTo(4);
+        assertThat(c[1][0]).isEqualTo(3);
+        assertThat(c[1][1]).isEqualTo(3);
+        assertThat(c[2][0]).isEqualTo(2);
+        assertThat(c[2][1]).isEqualTo(2);
+
+        assertThatThrownBy(() -> MatrixUtils.add(new double[][] {{1}, {2}},
+                new double[][] {{1}, {2}, {3}}))
+                .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    @DisplayName("Subtract from scalar")
+    void subtractFromScalar() {
+        double[][] a = new double[][] {{0.5, 0.5},{1, 1}};
+        double[][] c = MatrixUtils.subtract(1, a);
+
+        assertThat(c).hasDimensions(2, 2);
+
+        assertThat(c[0][0]).isEqualTo(0.5);
+        assertThat(c[0][1]).isEqualTo(0.5);
+        assertThat(c[1][0]).isEqualTo(0);
+        assertThat(c[1][1]).isEqualTo(0);
+    }
+
     //==== Negative Test ====
 
     @Test
@@ -181,7 +237,7 @@ class MatrixUtilsTest {
         double[][] ma = new double[][]{{2, 2}, {1, 1}};
         double[][] mb = new double[][]{{1, 2}};
 
-        assertThatThrownBy(() -> MatrixUtils.checkCompatible(ma, mb))
+        assertThatThrownBy(() -> MatrixUtils.checkMultiplyMatrixCompatible(ma, mb))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 

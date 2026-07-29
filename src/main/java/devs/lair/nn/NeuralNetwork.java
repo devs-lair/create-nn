@@ -33,6 +33,53 @@ public class NeuralNetwork {
         initWeights();
     }
 
+    public void train(double[] inputs, double[] targets) {
+        if (inputs.length != inputNodesNumber) {
+            throw new IllegalArgumentException("Wrong count of inputs");
+        }
+
+        if (targets.length != outputNodesNumber) {
+            throw new IllegalArgumentException("Wrong count of outputs");
+        }
+
+        double[][] inputMatrix = MatrixUtils.transformToMatrix(inputs);
+        double[][] targetMatrix = MatrixUtils.transformToMatrix(targets);
+
+        double[][] hiddenInputs = MatrixUtils.multiply(inputToHiddenWeights, inputMatrix);
+        double[][] hiddenOutputs = MatrixUtils.applyFunction(hiddenInputs, activationFunction);
+        double[][] finalInputs = MatrixUtils.multiply(hiddenToOutputsWeights, hiddenOutputs);
+        double[][] finalOutputs = MatrixUtils.applyFunction(finalInputs, activationFunction);
+
+        double[][] outputErrors = MatrixUtils.subtract(targetMatrix, finalOutputs);
+        double[][] hiddenErrors = MatrixUtils.multiply(MatrixUtils.transpose(hiddenToOutputsWeights), outputErrors);
+
+        //self.who += self.lr * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)), numpy.transpose(hidden_outputs))
+        double[][] deltaHiddenToOutputs = MatrixUtils.multiply(
+                MatrixUtils.multiply(
+                        MatrixUtils.multiplyByElements(
+                                outputErrors,
+                                MatrixUtils.multiplyByElements(
+                                        finalOutputs,
+                                        MatrixUtils.subtract(1, finalOutputs))),
+                        MatrixUtils.transpose(hiddenOutputs)),
+                learningRate);
+
+        hiddenToOutputsWeights = MatrixUtils.add(hiddenToOutputsWeights, deltaHiddenToOutputs);
+
+        //self.wih += self.lr * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), numpy.transpose(inputs))
+        double[][] deltaInputsToHidden = MatrixUtils.multiply(
+                MatrixUtils.multiply(
+                        MatrixUtils.multiplyByElements(
+                                hiddenErrors,
+                                MatrixUtils.multiplyByElements(
+                                        hiddenOutputs,
+                                        MatrixUtils.subtract(1, hiddenOutputs))),
+                        MatrixUtils.transpose(inputMatrix)),
+                learningRate);
+
+        inputToHiddenWeights = MatrixUtils.add(inputToHiddenWeights, deltaInputsToHidden);
+    }
+
     public double[][] query(double[] inputs) {
         if (inputs.length != inputNodesNumber) {
             throw new IllegalArgumentException("Wrong count of inputs");

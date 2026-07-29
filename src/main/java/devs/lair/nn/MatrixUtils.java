@@ -9,13 +9,34 @@ public class MatrixUtils {
     }
 
     public static double[][] multiply(double[][] ma, double[][] mb) {
-        checkCompatible(ma, mb);
+        checkMultiplyMatrixCompatible(ma, mb);
 
         double[][] result = new double[ma.length][mb[0].length];
 
         for (int row = 0; row < result.length; row++) {
             for (int col = 0; col < result[row].length; col++) {
                 result[row][col] = calculateElement(ma, mb, row, col);
+            }
+        }
+
+        return result;
+    }
+
+    public static double[][] multiplyByElements(double[][] ma, double[][] mb) {
+        checkEmpty(ma);
+
+        if (ma.length != mb.length) {
+            throw new IllegalArgumentException("Matrices not compatible");
+        }
+
+        checkConstantLength(ma);
+        checkConstantLength(mb);
+
+        double[][] result = new double[ma.length][mb[0].length];
+
+        for (int i = 0; i < ma.length; i++) {
+            for (int j = 0; j < ma[0].length; j++) {
+                result[i][j] = ma[i][j] * mb[i][j];
             }
         }
 
@@ -70,7 +91,7 @@ public class MatrixUtils {
         return cell;
     }
 
-    public static void checkCompatible(double[][] ma, double[][] mb) {
+    public static void checkMultiplyMatrixCompatible(double[][] ma, double[][] mb) {
         checkEmpty(ma);
         checkEmpty(mb);
 
@@ -128,6 +149,61 @@ public class MatrixUtils {
         for (int i = 0; i < matrix.length; i++) {
             for (int j = 0; j < matrix[0].length; j++) {
                 result[i][j] = doubleFunction.apply(matrix[i][j]);
+            }
+        }
+
+        return result;
+    }
+
+    public static double[][] subtract(double[][] from, double[][] that) {
+        checkEmpty(from);
+
+        if (from.length != that.length) {
+            throw new IllegalArgumentException("Matrices not compatible");
+        }
+
+        checkConstantLength(from);
+        checkConstantLength(that);
+
+        double[][] result = new double[from.length][from[0].length];
+
+        for (int i = 0; i < from.length; i++) {
+            for (int j = 0; j < from[0].length; j++) {
+                result[i][j] = from[i][j] - that[i][j];
+            }
+        }
+
+        return result;
+    }
+
+    public static double[][] subtract(double scalar, double[][] matrix) {
+        checkEmpty(matrix);
+
+        double[][] result = new double[matrix.length][matrix[0].length];
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                result[i][j] = scalar - matrix[i][j];
+            }
+        }
+
+        return result;
+    }
+
+    public static double[][] add(double[][] from, double[][] that) {
+        checkEmpty(from);
+
+        if (from.length != that.length) {
+            throw new IllegalArgumentException("Matrices not compatible");
+        }
+
+        checkConstantLength(from);
+        checkConstantLength(that);
+
+        double[][] result = new double[from.length][from[0].length];
+
+        for (int i = 0; i < from.length; i++) {
+            for (int j = 0; j < from[0].length; j++) {
+                result[i][j] = from[i][j] + that[i][j];
             }
         }
 

@@ -1,11 +1,17 @@
 package devs.lair.nn;
 
+import org.jetbrains.annotations.NotNull;
 import java.util.function.DoubleFunction;
 
 public class MatrixUtils {
+    private static boolean noChecks = false;
 
     private MatrixUtils() {
         throw new UnsupportedOperationException();
+    }
+
+    public static void setNoChecks(boolean noChecks) {
+        MatrixUtils.noChecks = noChecks;
     }
 
     public static double[][] multiply(double[][] ma, double[][] mb) {
@@ -23,24 +29,11 @@ public class MatrixUtils {
     }
 
     public static double[][] multiplyByElements(double[][] ma, double[][] mb) {
-        checkEmpty(ma);
+        return byElements(ma, mb, Operation.MULTIPLY);
+    }
 
-        if (ma.length != mb.length) {
-            throw new IllegalArgumentException("Matrices not compatible");
-        }
-
-        checkConstantLength(ma);
-        checkConstantLength(mb);
-
-        double[][] result = new double[ma.length][mb[0].length];
-
-        for (int i = 0; i < ma.length; i++) {
-            for (int j = 0; j < ma[0].length; j++) {
-                result[i][j] = ma[i][j] * mb[i][j];
-            }
-        }
-
-        return result;
+    public static double[][] divideByElements(double[][] ma, double[][] mb) {
+        return byElements(ma, mb, Operation.DIVIDE);
     }
 
     public static double[][] multiply(double[][] m, double scalar) {
@@ -91,49 +84,6 @@ public class MatrixUtils {
         return cell;
     }
 
-    public static void checkMultiplyMatrixCompatible(double[][] ma, double[][] mb) {
-        checkEmpty(ma);
-        checkEmpty(mb);
-
-        checkConstantLength(ma);
-        checkConstantLength(mb);
-
-        if (ma[0].length != mb.length) {
-            throw new IllegalArgumentException("Matrices not compatible");
-        }
-    }
-
-    public static void checkEmpty(double[][] m) {
-        if (m.length == 0) {
-            throw new IllegalArgumentException("Matrix is empty");
-        }
-    }
-
-    public static void checkEmpty(double[] m) {
-        if (m.length == 0) {
-            throw new IllegalArgumentException("Matrix is empty");
-        }
-    }
-
-    public static void checkConstantLength(double[][] m) {
-        int constantLength = -1;
-        for (int i = 0; i < m.length; i++) {
-            if (constantLength == - 1) {
-                constantLength = m[i].length;
-                continue;
-            }
-
-            if (constantLength != m[i].length ) {
-                throw new IllegalArgumentException(
-                        "Martix has an inconstant size, wrong row with index = %d".formatted(i));
-            }
-        }
-
-        if (constantLength == 0) {
-            throw new IllegalArgumentException("Matrix has empty rows");
-        }
-    }
-
     public static double[][] transformToMatrix(double[] inputs) {
         double[][] matrix = new double[inputs.length][1];
         for (int i = 0; i < matrix.length; i++) {
@@ -155,25 +105,12 @@ public class MatrixUtils {
         return result;
     }
 
-    public static double[][] subtract(double[][] from, double[][] that) {
-        checkEmpty(from);
+    public static double[][] subtract(double[][] ma, double[][] mb) {
+        return byElements(ma, mb, Operation.SUBTRACT);
+    }
 
-        if (from.length != that.length) {
-            throw new IllegalArgumentException("Matrices not compatible");
-        }
-
-        checkConstantLength(from);
-        checkConstantLength(that);
-
-        double[][] result = new double[from.length][from[0].length];
-
-        for (int i = 0; i < from.length; i++) {
-            for (int j = 0; j < from[0].length; j++) {
-                result[i][j] = from[i][j] - that[i][j];
-            }
-        }
-
-        return result;
+    public static double[][] add(double[][] ma, double[][] mb) {
+        return byElements(ma, mb, Operation.ADD);
     }
 
     public static double[][] subtract(double scalar, double[][] matrix) {
@@ -189,24 +126,92 @@ public class MatrixUtils {
         return result;
     }
 
-    public static double[][] add(double[][] from, double[][] that) {
-        checkEmpty(from);
-
-        if (from.length != that.length) {
-            throw new IllegalArgumentException("Matrices not compatible");
-        }
-
-        checkConstantLength(from);
-        checkConstantLength(that);
-
-        double[][] result = new double[from.length][from[0].length];
-
-        for (int i = 0; i < from.length; i++) {
-            for (int j = 0; j < from[0].length; j++) {
-                result[i][j] = from[i][j] + that[i][j];
+    public static double[][] byElements(double[][] ma, double[][] mb, @NotNull Operation operation) {
+        checkElementsOperationCompatible(ma, mb);
+        double[][] result = new double[ma.length][ma[0].length];
+        for (int i = 0; i < ma.length; i++) {
+            for (int j = 0; j < ma[0].length; j++) {
+                result[i][j] = switch (operation) {
+                    case ADD -> ma[i][j] + mb[i][j];
+                    case SUBTRACT -> ma[i][j] - mb[i][j];
+                    case MULTIPLY -> ma[i][j] * mb[i][j];
+                    case DIVIDE -> ma[i][j] / mb[i][j];
+                };
             }
         }
 
         return result;
+    }
+
+    public static void checkMultiplyMatrixCompatible(double[][] ma, double[][] mb) {
+        if (noChecks) return;
+
+        checkEmpty(ma);
+        checkEmpty(mb);
+
+        checkConstantLength(ma);
+        checkConstantLength(mb);
+
+        if (ma[0].length != mb.length) {
+            throw new IllegalArgumentException("Matrices not compatible");
+        }
+    }
+
+    public static void checkEmpty(double[][] m) {
+        if (noChecks) return;
+
+        if (m.length == 0) {
+            throw new IllegalArgumentException("Matrix is empty");
+        }
+    }
+
+    public static void checkEmpty(double[] m) {
+        if (noChecks) return;
+
+        if (m.length == 0) {
+            throw new IllegalArgumentException("Matrix is empty");
+        }
+    }
+
+    public static void checkConstantLength(double[][] m) {
+        if (noChecks) return;
+
+        int constantLength = -1;
+        for (int i = 0; i < m.length; i++) {
+            if (constantLength == - 1) {
+                constantLength = m[i].length;
+                continue;
+            }
+
+            if (constantLength != m[i].length ) {
+                throw new IllegalArgumentException(
+                        "Martix has an inconstant size, wrong row with index = %d".formatted(i));
+            }
+        }
+
+        if (constantLength == 0) {
+            throw new IllegalArgumentException("Matrix has empty rows");
+        }
+    }
+
+    private static void checkElementsOperationCompatible(double[][] ma, double[][] mb) {
+        if (noChecks) return;
+
+        checkEmpty(ma);
+
+        if (ma.length != mb.length) {
+            throw new IllegalArgumentException("Matrices not compatible");
+        }
+
+        if (ma[0].length != mb[0].length) {
+            throw new IllegalArgumentException("Matrices not compatible");
+        }
+
+        checkConstantLength(ma);
+        checkConstantLength(mb);
+    }
+
+    public enum Operation {
+        ADD, SUBTRACT, MULTIPLY, DIVIDE
     }
 }

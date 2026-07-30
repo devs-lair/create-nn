@@ -12,7 +12,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBuffer;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -190,13 +189,18 @@ public class MnistCsvViewer extends JPanel {
 
         try {
             long fileSize = Files.size(currentPath);
+
+            if (fileSize == 0) {
+                throw new IllegalArgumentException("File is empty");
+            }
+
             if (fileSize > 1024 * 1024) {
                 selectFileButton.setEnabled(false);
                 setPanelEnabled(selectNumbersPanel, false);
             }
 
             createLoadTask().execute();
-        } catch (IOException e) {
+        } catch (Exception e) {
             showErrorImportDialog();
         }
     }
@@ -215,16 +219,10 @@ public class MnistCsvViewer extends JPanel {
             if ("progress".equals(evt.getPropertyName())) {
                 Integer progress = (Integer) evt.getNewValue();
                 progressMonitor.setProgress(progress);
-                if (progress > 95) {
-                    progressMonitor.setNote("Load completed. Rendering");
-                } else {
-                    progressMonitor.setNote(String.format("Completed %d%%.\n", progress));
-                }
+                progressMonitor.setNote(String.format("Completed %d%%.\n", progress));
 
                 if (progressMonitor.isCanceled()) {
-                    if (progressMonitor.isCanceled()) {
-                        loadFileTask.cancel(true);
-                    }
+                    loadFileTask.cancel(true);
                 }
             }
         });
@@ -264,25 +262,24 @@ public class MnistCsvViewer extends JPanel {
 
             String line;
             try (BufferedReader reader = Files.newBufferedReader(currentPath)) {
-                long fileSize = Files.size(currentPath);
-                if (fileSize == 0) {
-                    throw new IllegalArgumentException("File is empty");
-                }
 
+                long fileSize = Files.size(currentPath);
                 long readTotal = 0;
-                long chunk = 0;
+                long readLines = 0;
+                List<DataPair> chunks = new ArrayList<>();
+
                 while ((line = reader.readLine()) != null && !isCancelled()) {
-                    chunk += line.getBytes(StandardCharsets.UTF_8).length;
-                    if (chunk > fileSize / 100) {
-                        readTotal += chunk;
-                        chunk = 0;
+                    readLines += line.getBytes(StandardCharsets.UTF_8).length;
+                    if (readLines > fileSize / 100) {
+                        readTotal += readLines;
+                        readLines = 0;
                         setProgress((int) ((readTotal / (double) fileSize) * 100));
                     }
 
                     String[] split = line.split(",");
 
                     if ((split.length == 0) || (split.length - 1) % 2 != 0) {
-                        throw new IllegalArgumentException("Wrong CSV file");
+                        throw new IllegalArgumentException();
                     }
 
                     int number = Integer.parseInt(split[0]);
@@ -297,20 +294,32 @@ public class MnistCsvViewer extends JPanel {
                         dataBuffer.setElem(i - 1, 255 - Integer.parseInt(split[i]));
                     }
 
-                    publish(new DataPair(image, String.valueOf(number)));
+                    chunks.add(new DataPair(image, String.valueOf(number)));
+                    if (chunks.size() == 1000) {
+                        SwingUtilities.invokeAndWait(() -> createLabels(chunks));
+                        chunks.clear();
+                    }
+
                     totalNumberAdded++;
                 }
-            } catch (Exception e) {
+
+                //render tail
+                if (!chunks.isEmpty()) {
+                    SwingUtilities.invokeAndWait(() -> createLabels(chunks));
+                }
+
+            } catch (InterruptedException ex) {
                 currentPath = null;
+            } catch (Exception e) {
                 SwingUtilities.invokeLater(MnistCsvViewer.this::showErrorImportDialog);
+                currentPath = null;
             }
 
             setProgress(100);
             return null;
         }
 
-        @Override
-        protected void process(List<DataPair> chunks) {
+        protected void createLabels(List<DataPair> chunks) {
             for (DataPair pair : chunks) {
                 gridPanel.add(createNumberLabel(pair.image, pair.number));
             }
@@ -381,7 +390,6 @@ public class MnistCsvViewer extends JPanel {
 
     private static void createAndShowGUI() {
         JFrame f = new JFrame(FRAME_TITLE);
-        f.pack();
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(800, 350);
         f.getContentPane().add(new MnistCsvViewer(f));

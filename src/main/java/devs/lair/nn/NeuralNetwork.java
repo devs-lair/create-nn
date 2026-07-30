@@ -1,7 +1,7 @@
 package devs.lair.nn;
 
+import devs.lair.nn.util.Checker;
 import org.jetbrains.annotations.NotNull;
-
 import java.util.Random;
 import java.util.function.DoubleFunction;
 
@@ -23,7 +23,7 @@ public class NeuralNetwork {
                          int outputNodesNumber,
                          double learningRate) {
 
-        checkNodesNumbers(inputNodesNumber, hiddenNodesNumber, outputNodesNumber);
+        Checker.checkNodesNumbers(inputNodesNumber, hiddenNodesNumber, outputNodesNumber);
 
         this.inputNodesNumber = inputNodesNumber;
         this.hiddenNodesNumber = hiddenNodesNumber;
@@ -106,6 +106,11 @@ public class NeuralNetwork {
         fillWeightMatrix(hiddenToOutputsWeights);
     }
 
+    public void initWeights(double[][] ihw, double[][] how) {
+        inputToHiddenWeights = ihw;
+        hiddenToOutputsWeights = how;
+    }
+
     private void fillWeightMatrix(double[][] matrix) {
         Random random = new Random();
         for (int i = 0; i < matrix.length; i++) {
@@ -119,19 +124,29 @@ public class NeuralNetwork {
         }
     }
 
-    private void checkNodesNumbers(int inputNodesNumber,
-                                   int hiddenNodesNumber,
-                                   int outputNodesNumber) {
-        if (inputNodesNumber < 1) {
-            throw new IllegalArgumentException("Wrong inputs nodes number");
-        }
+    //==== Getters ==== //
 
-        if (hiddenNodesNumber < 1) {
-            throw new IllegalArgumentException("Wrong hidden nodes number");
-        }
+    public int getInputNodesNumber() {
+        return inputNodesNumber;
+    }
 
-        if (outputNodesNumber < 1) {
-            throw new IllegalArgumentException("Wrong output nodes number");
-        }
+    public int getHiddenNodesNumber() {
+        return hiddenNodesNumber;
+    }
+
+    public int getOutputNodesNumber() {
+        return outputNodesNumber;
+    }
+
+    public double getLearningRate() {
+        return learningRate;
+    }
+
+    public double[][] getInputToHiddenWeights() {
+        return inputToHiddenWeights;
+    }
+
+    public double[][] getHiddenToOutputsWeights() {
+        return hiddenToOutputsWeights;
     }
 }

@@ -1,7 +1,13 @@
 package devs.lair.nn;
 
 import org.jetbrains.annotations.NotNull;
+
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 import java.util.function.DoubleFunction;
+import java.util.stream.Stream;
 
 public class MatrixUtils {
     private static boolean noChecks = false;
@@ -209,6 +215,18 @@ public class MatrixUtils {
 
         checkConstantLength(ma);
         checkConstantLength(mb);
+    }
+
+    public static String toString(double[][] matrix) {
+        StringBuilder result = new StringBuilder();
+        for (double[] row : matrix) {
+            for (double v : row) {
+                result.append(v).append(",");
+            }
+        }
+
+        result.delete(result.length() - 1, result.length());
+        return result.toString();
     }
 
     public enum Operation {

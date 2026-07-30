@@ -1,5 +1,6 @@
 package devs.lair.nn;
 
+import devs.lair.nn.util.Checker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -23,7 +24,7 @@ public class NetworkTrainer {
     }
 
     public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile, int epochs) {
-        checkInputFile(csvFile);
+        Checker.checkFile(csvFile);
 
         Instant startTime = Instant.now();
         String line;
@@ -36,7 +37,10 @@ public class NetworkTrainer {
             int epochRecords = 0;
             try (BufferedReader reader = Files.newBufferedReader(csvFile)) {
                 while ((line = reader.readLine()) != null) {
+
                     String[] split = line.split(",");
+                    Checker.checkSplit(split);
+
                     double[] target = converNumberToTargetArray(Integer.parseInt(split[0]));
                     double[] inputs = convertLineToInputArray(split);
                     nn.train(inputs, target);
@@ -66,7 +70,8 @@ public class NetworkTrainer {
     }
 
     public static ValidationReport validateNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile) {
-        checkInputFile(csvFile);
+        Checker.checkFile(csvFile);
+
         Instant startTime = Instant.now();
         if (out != null) {
             out.printf("Start validation at %s %n", new Date());
@@ -139,19 +144,7 @@ public class NetworkTrainer {
         return array;
     }
 
-    private static void checkInputFile(@NotNull Path csvFile) {
-        if (!Files.exists(csvFile)) {
-            throw new IllegalArgumentException("File not exist");
-        }
 
-        try {
-            if (Files.size(csvFile) == 0) {
-                throw new IllegalArgumentException("File is empty");
-            }
-        } catch (IOException e) {
-            throw new IllegalArgumentException("Wrong csv file");
-        }
-    }
 
     public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile) {
         return trainNetwork(nn, csvFile, 1);

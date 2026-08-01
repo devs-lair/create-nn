@@ -1,10 +1,10 @@
 package devs.lair.nn.ui;
 
+import com.formdev.flatlaf.FlatIntelliJLaf;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -369,18 +369,6 @@ public class MnistCsvViewer extends JPanel {
         return null;
     }
 
-    private static class CsvFilter extends FileFilter {
-        @Override
-        public boolean accept(File file) {
-            return file.isDirectory() || "csv".equals(getExtension(file));
-        }
-
-        @Override
-        public String getDescription() {
-            return "CSV file";
-        }
-    }
-
     private record DataPair(@NotNull BufferedImage image, @NotNull String number) {
     }
 
@@ -389,6 +377,8 @@ public class MnistCsvViewer extends JPanel {
     }
 
     private static void createAndShowGUI() {
+        FlatIntelliJLaf.setup();
+
         JFrame f = new JFrame(FRAME_TITLE);
         f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         f.setSize(800, 350);

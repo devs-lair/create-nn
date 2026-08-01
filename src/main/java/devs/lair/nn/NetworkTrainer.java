@@ -91,7 +91,7 @@ public class NetworkTrainer {
                 double[] inputs = convertLineToInputArray(split);
                 double[][] output = nn.query(inputs);
 
-                int answer = extractFromOutputs(output);
+                int answer = getIndexOfMaxElementInOutputs(output);
                 int number = Integer.parseInt(split[0]);
 
                 if (answer == number) {
@@ -100,8 +100,6 @@ public class NetworkTrainer {
                     wrongRecords.add(line);
                 }
             }
-
-
         } catch (IOException e) {
             throw new IllegalStateException("Error while reading file: " + csvFile, e);
         }
@@ -117,7 +115,7 @@ public class NetworkTrainer {
         return new ValidationReport(totalRecords, correctRecords, wrongRecords, validateTime, csvFile, nn);
     }
 
-    private static int extractFromOutputs(double[][] output) {
+    private static int getIndexOfMaxElementInOutputs(double[][] output) {
         double max = Double.MIN_VALUE;
         int maxIndex = -1;
         for (int i = 0; i < output.length; i++) {
@@ -127,6 +125,7 @@ public class NetworkTrainer {
                 maxIndex = i;
             }
         }
+
         return maxIndex;
     }
 
@@ -143,8 +142,6 @@ public class NetworkTrainer {
         array[number] = 0.99;
         return array;
     }
-
-
 
     public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile) {
         return trainNetwork(nn, csvFile, 1);

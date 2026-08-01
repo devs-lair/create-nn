@@ -221,7 +221,7 @@ public class MatrixUtils {
         StringBuilder result = new StringBuilder();
         for (double[] row : matrix) {
             for (double v : row) {
-                result.append(v).append(",");
+                result.append(v).append(",").append("\n");
             }
         }
 

@@ -1,6 +1,7 @@
 package devs.lair.nn.ui;
 
 import com.formdev.flatlaf.FlatIntelliJLaf;
+import devs.lair.nn.util.Checker;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -20,9 +21,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MnistCsvViewer extends JPanel {
+public class MnistCsvViewer extends JFrame {
 
-    private final JFrame frame;
     private final JPanel gridPanel;
     private final JPanel selectNumbersPanel;
     private final JLabel fileNameLabel;
@@ -35,8 +35,8 @@ public class MnistCsvViewer extends JPanel {
     private JFileChooser fc;
     private Path currentPath;
 
-    public MnistCsvViewer(@NotNull JFrame frame) {
-        this.frame = frame;
+    public MnistCsvViewer() {
+        super(FRAME_TITLE);
 
         this.fileNameLabel = new JLabel("no file selected");
         this.fileNameLabel.setName(FILE_NAME_LABEL_NAME);
@@ -55,15 +55,18 @@ public class MnistCsvViewer extends JPanel {
 
         this.progressMonitor = new ProgressMonitor(this,
                 "Load data from file", "", 0, 100);
-        this.progressMonitor.setMillisToDecideToPopup(500);
         this.includeNumbers = new ArrayList<>(List.of(0, 1, 2, 3, 4, 5, 6, 7, 8, 9));
 
-        setLayout(new BorderLayout());
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        setSize(800, 350);
+        setLocationRelativeTo(null);
+
         add(createSelectFileAndFilterPanel(), BorderLayout.NORTH);
         add(new JScrollPane(gridPanel, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED), BorderLayout.CENTER);
 
         tryLoadDefault();
+        setVisible(true);
     }
 
     private @NotNull JComponent createSelectFileAndFilterPanel() {
@@ -188,12 +191,10 @@ public class MnistCsvViewer extends JPanel {
         }
 
         try {
+            Checker.checkFile(currentPath);
             long fileSize = Files.size(currentPath);
 
-            if (fileSize == 0) {
-                throw new IllegalArgumentException("File is empty");
-            }
-
+            //not disabled on small files (fast load)
             if (fileSize > 1024 * 1024) {
                 selectFileButton.setEnabled(false);
                 setPanelEnabled(selectNumbersPanel, false);
@@ -245,11 +246,11 @@ public class MnistCsvViewer extends JPanel {
         outputImage.getGraphics().drawImage(image.getScaledInstance(scaleSize, scaleSize, Image.SCALE_DEFAULT),
                 0, 0, null);
 
-        final JDialog dialog = new JDialog(MnistCsvViewer.this.frame, "Number %s".formatted(number), true);
+        final JDialog dialog = new JDialog(MnistCsvViewer.this, "Number %s".formatted(number), true);
         dialog.setName(DETAIL_VIEW_DIALOG_NAME);
-        dialog.getContentPane().add(new JLabel(new ImageIcon(outputImage)));
+        dialog.add(new JLabel(new ImageIcon(outputImage)));
+        dialog.setLocationRelativeTo(MnistCsvViewer.this);
         dialog.pack();
-        dialog.setLocationRelativeTo(MnistCsvViewer.this.frame);
         dialog.setVisible(true);
     }
 
@@ -336,13 +337,11 @@ public class MnistCsvViewer extends JPanel {
             setPanelEnabled(selectNumbersPanel, true);
             selectFileButton.setEnabled(true);
             gridPanel.repaint();
-            frame.validate();
         }
 
         private @NotNull JLabel createNumberLabel(@NotNull BufferedImage image,
                                                   @NotNull String number) {
-            JLabel jLabel = new JLabel(number);
-            jLabel.setIcon(new ImageIcon(image));
+            JLabel jLabel = new JLabel(number, new ImageIcon(image), JLabel.CENTER);
             jLabel.setHorizontalTextPosition(JLabel.CENTER);
             jLabel.setVerticalTextPosition(JLabel.BOTTOM);
             jLabel.addMouseListener(new MouseAdapter() {
@@ -357,7 +356,7 @@ public class MnistCsvViewer extends JPanel {
     }
 
     private void showErrorImportDialog() {
-        JOptionPane.showMessageDialog(frame, "Wrong CSV Fils", IMPORT_ERROR_TEXT,
+        JOptionPane.showMessageDialog(this, "Wrong CSV Fils", IMPORT_ERROR_TEXT,
                 JOptionPane.ERROR_MESSAGE);
     }
 
@@ -373,18 +372,10 @@ public class MnistCsvViewer extends JPanel {
     }
 
     public static void main(String[] args) {
-        SwingUtilities.invokeLater(MnistCsvViewer::createAndShowGUI);
-    }
-
-    private static void createAndShowGUI() {
-        FlatIntelliJLaf.setup();
-
-        JFrame f = new JFrame(FRAME_TITLE);
-        f.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        f.setSize(800, 350);
-        f.getContentPane().add(new MnistCsvViewer(f));
-        f.setLocationRelativeTo(null);
-        f.setVisible(true);
+        SwingUtilities.invokeLater(() -> {
+            FlatIntelliJLaf.setup();
+            new MnistCsvViewer();
+        });
     }
 
     //==== UI Component names =====

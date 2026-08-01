@@ -2,12 +2,7 @@ package devs.lair.nn;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.reflect.Array;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.function.DoubleFunction;
-import java.util.stream.Stream;
 
 public class MatrixUtils {
     private static boolean noChecks = false;
@@ -20,86 +15,91 @@ public class MatrixUtils {
         MatrixUtils.noChecks = noChecks;
     }
 
+    public static double[][] transpose(double[][] matrix) {
+        checkEmpty(matrix);
+        checkConstantLength(matrix);
+
+        double[][] transposed = new double[matrix[0].length][matrix.length];
+
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[0].length; j++) {
+                transposed[j][i] = matrix[i][j];
+            }
+        }
+
+        return transposed;
+    }
+
+    public static double[][] transpose(double[] array) {
+        checkEmpty(array);
+
+        double[][] transposed = new double[array.length][1];
+        for (int i = 0; i < array.length; i++) {
+            transposed[i][0] = array[i];
+        }
+
+        return transposed;
+    }
+
     public static double[][] multiply(double[][] ma, double[][] mb) {
         checkMultiplyMatrixCompatible(ma, mb);
 
         double[][] result = new double[ma.length][mb[0].length];
-
-        for (int row = 0; row < result.length; row++) {
-            for (int col = 0; col < result[row].length; col++) {
-                result[row][col] = calculateElement(ma, mb, row, col);
+        for (int i = 0; i < result.length; i++) {
+            for (int j = 0; j < result[i].length; j++) {
+                double cell = 0;
+                for (int k = 0; k < mb.length; k++) {
+                    cell += ma[i][k] * mb[k][j];
+                }
+                result[i][j] = cell;
             }
         }
 
         return result;
     }
 
+    public static double[][] multiply(double[][] matrix, double scalar) {
+        return withScalar(matrix, scalar, Operation.MULTIPLY);
+    }
+
     public static double[][] multiplyByElements(double[][] ma, double[][] mb) {
         return byElements(ma, mb, Operation.MULTIPLY);
     }
 
-    public static double[][] divideByElements(double[][] ma, double[][] mb) {
-        return byElements(ma, mb, Operation.DIVIDE);
+    public static double[][] divide(double[][] matrix, double scalar) {
+        return withScalar(matrix, scalar, Operation.DIVIDE);
     }
 
-    public static double[][] multiply(double[][] m, double scalar) {
-        checkEmpty(m);
-        for (int i = 0; i < m.length; i++) {
-            for (int j = 0; j < m[i].length; j++) {
-                m[i][j] = m[i][j] * scalar;
-            }
-        }
-        return m;
+    public static double[][] add(double[][] ma, double[][] mb) {
+        return byElements(ma, mb, Operation.ADD);
     }
 
-    public static double[][] transpose(double[][] m) {
-        checkEmpty(m);
-        checkConstantLength(m);
-
-        int rows = m.length;
-        int cols = m[0].length;
-
-        double[][] transposed = new double[cols][rows];
-
-        for (int i = 0; i < rows; i++) {
-            for (int j = 0; j < cols; j++) {
-                transposed[j][i] = m[i][j];
-            }
-        }
-
-        return transposed;
+    public static double[][] add(double[][] matrix, double scalar) {
+        return withScalar(matrix, scalar, Operation.ADD);
     }
 
-    public static double[][] transpose(double[] a) {
-        checkEmpty(a);
-
-        int length = a.length;
-        double[][] transposed = new double[length][1];
-        for (int i = 0; i < length; i++) {
-            transposed[i][0] = a[i];
-        }
-
-        return transposed;
+    public static double[][] subtract(double[][] ma, double[][] mb) {
+        return byElements(ma, mb, Operation.SUBTRACT);
     }
 
-    private static double calculateElement(double[][] ma, double[][] mb, int row, int col) {
-        double cell = 0;
-        for (int i = 0; i < mb.length; i++) {
-            cell += ma[row][i] * mb[i][col];
-        }
-        return cell;
+    public static double[][] subtract(double scalar, double[][] matrix) {
+                return withScalar(matrix, scalar, Operation.SUBTRACT_FROM_SCALAR);
     }
 
-    public static double[][] transformToMatrix(double[] inputs) {
-        double[][] matrix = new double[inputs.length][1];
+    public static double[][] subtract(double[][] matrix, double scalar) {
+        return withScalar(matrix, scalar, Operation.SUBTRACT);
+    }
+
+    public static double[][] transformToMatrix(double[] array) {
+        double[][] matrix = new double[array.length][1];
         for (int i = 0; i < matrix.length; i++) {
-            matrix[i][0] = inputs[i];
+            matrix[i][0] = array[i];
         }
 
         return matrix;
     }
 
-    public static double[][] applyFunction(double[][] matrix, DoubleFunction<Double> doubleFunction) {
+    public static double[][] applyFunction(double[][] matrix, @NotNull DoubleFunction<Double> doubleFunction) {
         double[][] result = new double[matrix.length][matrix[0].length];
 
         for (int i = 0; i < matrix.length; i++) {
@@ -111,29 +111,9 @@ public class MatrixUtils {
         return result;
     }
 
-    public static double[][] subtract(double[][] ma, double[][] mb) {
-        return byElements(ma, mb, Operation.SUBTRACT);
-    }
-
-    public static double[][] add(double[][] ma, double[][] mb) {
-        return byElements(ma, mb, Operation.ADD);
-    }
-
-    public static double[][] subtract(double scalar, double[][] matrix) {
-        checkEmpty(matrix);
-
-        double[][] result = new double[matrix.length][matrix[0].length];
-        for (int i = 0; i < matrix.length; i++) {
-            for (int j = 0; j < matrix[0].length; j++) {
-                result[i][j] = scalar - matrix[i][j];
-            }
-        }
-
-        return result;
-    }
-
     public static double[][] byElements(double[][] ma, double[][] mb, @NotNull Operation operation) {
         checkElementsOperationCompatible(ma, mb);
+
         double[][] result = new double[ma.length][ma[0].length];
         for (int i = 0; i < ma.length; i++) {
             for (int j = 0; j < ma[0].length; j++) {
@@ -142,11 +122,77 @@ public class MatrixUtils {
                     case SUBTRACT -> ma[i][j] - mb[i][j];
                     case MULTIPLY -> ma[i][j] * mb[i][j];
                     case DIVIDE -> ma[i][j] / mb[i][j];
+                    case SUBTRACT_FROM_SCALAR ->
+                            throw new UnsupportedOperationException(
+                                    "This operation work only with scalar");
                 };
             }
         }
 
         return result;
+    }
+
+    public static double[][] withScalar(double[][] matrix, double scalar, @NotNull Operation operation) {
+        checkEmpty(matrix);
+
+        if (operation == Operation.DIVIDE) {
+            if (scalar == 0) {
+                throw new IllegalArgumentException("Can not divide by zero");
+            }
+        }
+
+        double[][] result = new double[matrix.length][matrix[0].length];
+        for (int i = 0; i < matrix.length; i++) {
+            for (int j = 0; j < matrix[i].length; j++) {
+                result[i][j] = switch (operation) {
+                    case ADD -> matrix[i][j] + scalar;
+                    case SUBTRACT -> matrix[i][j] - scalar;
+                    case SUBTRACT_FROM_SCALAR -> scalar - matrix[i][j];
+                    case MULTIPLY -> matrix[i][j] * scalar;
+                    case DIVIDE -> matrix[i][j] / scalar;
+                };
+            }
+        }
+
+        return result;
+    }
+
+    public static double min(double[][] matrix) {
+        return minmax(matrix)[0];
+    }
+
+    public static double max(double[][] matrix) {
+        return minmax(matrix)[1];
+    }
+
+    public static double[] minmax(double[][] matrix) {
+        checkEmpty(matrix);
+        double min = Double.MAX_VALUE;
+        double max = Double.MIN_VALUE;
+        for (double[] row : matrix) {
+            for (double v : row) {
+                if (v < min) {
+                    min = v;
+                }
+
+                if (v > max) {
+                    max = v;
+                }
+            }
+        }
+        return new double[] {min, max};
+    }
+
+    public static String toString(double[][] matrix) {
+        StringBuilder result = new StringBuilder();
+        for (double[] row : matrix) {
+            for (double v : row) {
+                result.append(v).append(",");
+            }
+        }
+
+        result.delete(result.length() - 1, result.length());
+        return result.toString();
     }
 
     public static void checkMultiplyMatrixCompatible(double[][] ma, double[][] mb) {
@@ -217,19 +263,7 @@ public class MatrixUtils {
         checkConstantLength(mb);
     }
 
-    public static String toString(double[][] matrix) {
-        StringBuilder result = new StringBuilder();
-        for (double[] row : matrix) {
-            for (double v : row) {
-                result.append(v).append(",").append("\n");
-            }
-        }
-
-        result.delete(result.length() - 1, result.length());
-        return result.toString();
-    }
-
     public enum Operation {
-        ADD, SUBTRACT, MULTIPLY, DIVIDE
+        ADD, SUBTRACT, MULTIPLY, DIVIDE, SUBTRACT_FROM_SCALAR
     }
 }

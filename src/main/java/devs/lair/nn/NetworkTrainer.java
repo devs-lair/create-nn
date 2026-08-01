@@ -16,14 +16,19 @@ import java.util.Date;
 import java.util.List;
 
 public class NetworkTrainer {
-
     private static PrintStream out = System.out;
 
     public static void setPrintStream(@Nullable PrintStream out) {
         NetworkTrainer.out = out;
     }
 
-    public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile, int epochs) {
+    public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile) {
+        return trainNetwork(nn, csvFile, 1);
+    }
+
+    public static Duration trainNetwork(@NotNull NeuralNetwork nn,
+                                        @NotNull Path csvFile,
+                                        int epochs) {
         Checker.checkFile(csvFile);
 
         Instant startTime = Instant.now();
@@ -62,14 +67,16 @@ public class NetworkTrainer {
 
         Duration trainTime = Duration.between(startTime, Instant.now());
         if (out != null) {
-            out.printf("Training finished, epochs %d, total records processed %d, duration %s ms %n",
+            out.printf("Training finished, epochs %d, total records processed %d, " +
+                            "duration %s ms %n",
                     epochs, totalRecords, trainTime.toMillis());
         }
 
         return trainTime;
     }
 
-    public static ValidationReport validateNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile) {
+    public static ValidationReport validateNetwork(@NotNull NeuralNetwork nn,
+                                                   @NotNull Path csvFile) {
         Checker.checkFile(csvFile);
 
         Instant startTime = Instant.now();
@@ -108,7 +115,8 @@ public class NetworkTrainer {
         Duration validateTime = Duration.between(startTime, Instant.now());
 
         if (out != null) {
-            out.printf("Validation finished. Total records: %d, correct records: %d, performance rate: %f, validation time: %s ms%n",
+            out.printf("Validation finished. Total records: %d, correct records: %d, " +
+                            "performance rate: %f, validation time: %s ms%n",
                     totalRecords, correctRecords, performanceRate, validateTime.toMillis());
         }
 
@@ -141,9 +149,5 @@ public class NetworkTrainer {
         double[] array = new double[]{0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
         array[number] = 0.99;
         return array;
-    }
-
-    public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile) {
-        return trainNetwork(nn, csvFile, 1);
     }
 }

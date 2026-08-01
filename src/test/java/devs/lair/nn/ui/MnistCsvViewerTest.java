@@ -19,15 +19,13 @@ import java.util.Objects;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.swing.core.matcher.DialogMatcher.withTitle;
 import static org.assertj.swing.edt.GuiActionRunner.execute;
-import static org.assertj.swing.finder.WindowFinder.findFrame;
-import static org.assertj.swing.launcher.ApplicationLauncher.application;
 import static org.assertj.swing.timing.Pause.pause;
 import static org.assertj.swing.timing.Timeout.timeout;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @Tag("ui")
-@Disabled("Local only")
+//@Disabled("Local only")
 
 public class MnistCsvViewerTest extends AssertJSwingTestCaseTemplate {
     protected FrameFixture frame;
@@ -42,16 +40,12 @@ public class MnistCsvViewerTest extends AssertJSwingTestCaseTemplate {
     @BeforeEach
     public void startApp() {
         setUpRobot();
-        application(MnistCsvViewer.class).start();
-        frame = findFrame(new GenericTypeMatcher<>(Frame.class) {
-            protected boolean isMatching(@NotNull Frame frame) {
-                return MnistCsvViewer.FRAME_TITLE.equals(frame.getTitle());
-            }
-        }).using(robot());
+        frame = new FrameFixture(robot(), Objects.requireNonNull(
+                execute(MnistCsvViewer::new)));
+        frame.show();
 
-        robot().settings().delayBetweenEvents(200);
-        robot().settings().idleTimeout(200);
-        //frame.show();
+        robot().settings().delayBetweenEvents(100);
+        robot().settings().idleTimeout(100);
     }
 
     @Test
@@ -92,10 +86,10 @@ public class MnistCsvViewerTest extends AssertJSwingTestCaseTemplate {
         assertThat(selectNumberPanel.getComponentCount()).isEqualTo(13);
     }
 
+    //not stable
     @Test
     @DisplayName("Click Select File Button")
     @Order(2)
-    //nott stable
     void clickSelectFileButtonTest() {
         assertThat(frame).isNotNull();
         JButtonFixture selectButton = frame.button(MnistCsvViewer.SELECT_FILE_BUTTON_NAME);

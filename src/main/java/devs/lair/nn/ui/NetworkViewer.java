@@ -90,12 +90,43 @@ public class NetworkViewer extends JPanel {
         JTabbedPane tabs = new JTabbedPane();
         tabs.addTab("Info", createInfoPanel());
         tabs.addTab("Query", createQueryPanel());
-        tabs.addTab("Back query", new JLabel("Test"));
+        tabs.addTab("Back query", createBackQueryPanel());
 
         this.add(tabs, BorderLayout.CENTER);
 
         validate();
         repaint();
+    }
+
+    private JComponent createBackQueryPanel() {
+        JPanel flowPanel = new JPanel(new GridLayout(2, 5));
+
+        for (int i = 0; i < 10; i++) {
+            double[] target = new double[10];
+            Arrays.fill(target, 0.01);
+            target[i] = 0.99;
+
+            double[][] inputs = nn.backQuery(target);
+
+            BufferedImage outputImage = new BufferedImage(28, 28, BufferedImage.TYPE_BYTE_GRAY);
+            DataBuffer dataBuffer = outputImage.getRaster().getDataBuffer();
+
+            for (int k = 0; k < inputs.length; k++) {
+                dataBuffer.setElem(k, (int) (255 * inputs[k][0]));
+            }
+
+            BufferedImage scaledImage = new BufferedImage(28*5, 28*5, BufferedImage.TYPE_BYTE_GRAY);
+            scaledImage.getGraphics().drawImage(outputImage.getScaledInstance(28*5, 28*5, Image.SCALE_DEFAULT),
+                    0, 0, null);
+            JLabel jLabel = new JLabel(new ImageIcon(scaledImage));
+            jLabel.setText(String.valueOf(i));
+            jLabel.setHorizontalTextPosition(JLabel.CENTER);
+            jLabel.setVerticalTextPosition(JLabel.BOTTOM);
+            jLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5,5));
+            flowPanel.add(jLabel);
+        }
+
+        return flowPanel;
     }
 
     private JComponent createQueryPanel() {
@@ -134,7 +165,7 @@ public class NetworkViewer extends JPanel {
         float[] filter = new float[100];
         Arrays.fill(filter, val);
 
-        BufferedImageOp op = new ConvolveOp(new Kernel(10, 10, filter ));
+        BufferedImageOp op = new ConvolveOp(new Kernel(10, 10, filter));
         return op.filter(img, null);
     }
 

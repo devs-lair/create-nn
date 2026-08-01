@@ -2,6 +2,7 @@ package devs.lair.nn;
 
 import devs.lair.nn.util.Checker;
 import org.jetbrains.annotations.NotNull;
+
 import java.util.Random;
 import java.util.function.DoubleFunction;
 
@@ -13,6 +14,8 @@ public class NeuralNetwork {
     private final double learningRate;
     private final DoubleFunction<Double> activationFunction
             = (double x) -> 1 / (1 + Math.exp(-x));
+    private final DoubleFunction<Double> inverseActivationFunction
+            = (double y) -> Math.log(y / (1 - y));
 
     private double[][] inputToHiddenWeights;
     private double[][] hiddenToOutputsWeights;
@@ -96,6 +99,27 @@ public class NeuralNetwork {
     public void setWeightInitStrategy(@NotNull WeightInitStrategy weightInitStrategy) {
         this.weightInitStrategy = weightInitStrategy;
         initWeights();
+    }
+
+    public double[][] backQuery(double[] targets) {
+        double[][] finalOutputs = MatrixUtils.transformToMatrix(targets);
+        double[][] finalInputs = MatrixUtils.applyFunction(finalOutputs, inverseActivationFunction);
+        double[][] hiddenOutputs = MatrixUtils.multiply(MatrixUtils.transpose(hiddenToOutputsWeights), finalInputs);
+
+        hiddenOutputs = MatrixUtils.subtract(hiddenOutputs, MatrixUtils.min(hiddenOutputs));
+        hiddenOutputs = MatrixUtils.divide(hiddenOutputs, MatrixUtils.max(hiddenOutputs));
+        hiddenOutputs = MatrixUtils.multiply(hiddenOutputs, 0.98);
+        hiddenOutputs = MatrixUtils.add(hiddenOutputs, 0.01);
+
+        double[][] hiddenInputs = MatrixUtils.applyFunction(hiddenOutputs, inverseActivationFunction);
+        double[][] inputs = MatrixUtils.multiply(MatrixUtils.transpose(inputToHiddenWeights), hiddenInputs);
+
+        inputs = MatrixUtils.subtract(inputs, MatrixUtils.min(inputs));
+        inputs = MatrixUtils.divide(inputs, MatrixUtils.max(inputs));
+        inputs = MatrixUtils.multiply(inputs, 0.98);
+        inputs = MatrixUtils.add(inputs, 0.01);
+
+        return inputs;
     }
 
     private void initWeights() {

@@ -38,9 +38,15 @@ public class Checker {
         }
     }
 
-    public static void checkSplit(String[] split) {
+    public static void checkSplit(@NotNull String[] split) {
         if (split.length == 0) {
             throw new IllegalArgumentException("Wrong split");
+        }
+    }
+
+    public static void checkCsvSplit(@NotNull String[] split) {
+        if ((split.length == 0) || (split.length - 1) % 2 != 0) {
+            throw new IllegalArgumentException();
         }
     }
 }

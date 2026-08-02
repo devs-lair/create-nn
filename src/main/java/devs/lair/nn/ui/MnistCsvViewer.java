@@ -2,17 +2,15 @@ package devs.lair.nn.ui;
 
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import devs.lair.nn.util.Checker;
+import devs.lair.nn.util.ImageUtils;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBuffer;
 import java.io.BufferedReader;
-import java.io.File;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -238,17 +236,10 @@ public class MnistCsvViewer extends JFrame {
         gridPanel.removeAll();
     }
 
-    private void showScaledViewDialog(BufferedImage image, String number) {
-        int scale = 10;
-        int originalSize = image.getHeight();
-        int scaleSize = originalSize * scale;
-        BufferedImage outputImage = new BufferedImage(scaleSize, scaleSize, BufferedImage.TYPE_BYTE_GRAY);
-        outputImage.getGraphics().drawImage(image.getScaledInstance(scaleSize, scaleSize, Image.SCALE_DEFAULT),
-                0, 0, null);
-
+    private void showScaledViewDialog(@NotNull BufferedImage image, @NotNull String number) {
         final JDialog dialog = new JDialog(MnistCsvViewer.this, "Number %s".formatted(number), true);
         dialog.setName(DETAIL_VIEW_DIALOG_NAME);
-        dialog.add(new JLabel(new ImageIcon(outputImage)));
+        dialog.add(new JLabel(new ImageIcon(ImageUtils.scale(image, 10))));
         dialog.setLocationRelativeTo(MnistCsvViewer.this);
         dialog.pack();
         dialog.setVisible(true);
@@ -261,41 +252,33 @@ public class MnistCsvViewer extends JFrame {
         public Void doInBackground() {
             setProgress(0);
 
-            String line;
             try (BufferedReader reader = Files.newBufferedReader(currentPath)) {
+                String line;
+                List<DataPair> chunks = new ArrayList<>();
 
                 long fileSize = Files.size(currentPath);
                 long readTotal = 0;
-                long readLines = 0;
-                List<DataPair> chunks = new ArrayList<>();
+                long readBytes = 0;
 
                 while ((line = reader.readLine()) != null && !isCancelled()) {
-                    readLines += line.getBytes(StandardCharsets.UTF_8).length;
-                    if (readLines > fileSize / 100) {
-                        readTotal += readLines;
-                        readLines = 0;
+                    readBytes += line.getBytes(StandardCharsets.UTF_8).length;
+                    if (readBytes > fileSize / 100) {
+                        readTotal += readBytes;
+                        readBytes = 0;
                         setProgress((int) ((readTotal / (double) fileSize) * 100));
                     }
 
                     String[] split = line.split(",");
-
-                    if ((split.length == 0) || (split.length - 1) % 2 != 0) {
-                        throw new IllegalArgumentException();
-                    }
+                    Checker.checkCsvSplit(split);
 
                     int number = Integer.parseInt(split[0]);
                     if (!includeNumbers.contains(number)) {
                         continue;
                     }
 
-                    int size = (int) Math.pow((split.length - 1), 0.5);
-                    BufferedImage image = new BufferedImage(size, size, BufferedImage.TYPE_BYTE_GRAY);
-                    DataBuffer dataBuffer = image.getRaster().getDataBuffer();
-                    for (int i = 1; i < split.length; i++) {
-                        dataBuffer.setElem(i - 1, 255 - Integer.parseInt(split[i]));
-                    }
+                    BufferedImage image = ImageUtils.createFromCsvSplit(split);
+                    chunks.add(new DataPair(image, split[0]));
 
-                    chunks.add(new DataPair(image, String.valueOf(number)));
                     if (chunks.size() == 1000) {
                         SwingUtilities.invokeAndWait(() -> createLabels(chunks));
                         chunks.clear();
@@ -358,14 +341,6 @@ public class MnistCsvViewer extends JFrame {
     private void showErrorImportDialog() {
         JOptionPane.showMessageDialog(this, "Wrong CSV Fils", IMPORT_ERROR_TEXT,
                 JOptionPane.ERROR_MESSAGE);
-    }
-
-    public static @Nullable String getExtension(@NotNull File f) {
-        int i = f.getName().lastIndexOf('.');
-        if (i > 0 && i < f.getName().length() - 1) {
-            return f.getName().substring(i + 1).toLowerCase();
-        }
-        return null;
     }
 
     private record DataPair(@NotNull BufferedImage image, @NotNull String number) {

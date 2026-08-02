@@ -8,6 +8,10 @@ import java.nio.file.Path;
 
 public class Checker {
 
+    private Checker() {
+        throw new UnsupportedOperationException();
+    }
+
     public static void checkFile(@NotNull Path csvFile) {
         if (!Files.exists(csvFile)) {
             throw new IllegalArgumentException("File not exist");

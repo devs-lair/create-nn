@@ -242,7 +242,7 @@ class MatrixUtilsTest {
     }
 
     @Test
-    @DisplayName("Private constructor call (covergae test")
+    @DisplayName("Private constructor call (coverage test")
     void callPrivateConstructorTest() throws NoSuchMethodException {
         Constructor<MatrixUtils> pcc = MatrixUtils.class.getDeclaredConstructor();
         pcc.setAccessible(true);

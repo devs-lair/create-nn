@@ -28,20 +28,13 @@ public class NetworkStorageTest {
     @DisplayName("Save nn to file")
     @Order(1)
     void saveToFile() {
-        NetworkTrainer.setPrintStream(System.out);
+        //NetworkTrainer.setPrintStream(System.out);
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
 
         //train
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train_100.csv");
         assertThat(trainFile).isNotNull();
         NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()), 5);
-
-        //validate
-//        URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
-//        assertThat(validateFile).isNotNull();
-//        double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
-//
-//        assertThat(performance).isGreaterThan(0.95);
 
         File file = NetworkStorage.saveToFile(nn, Paths.get("nn-train-100.csv"));
         assertThat(file).isNotEmpty();

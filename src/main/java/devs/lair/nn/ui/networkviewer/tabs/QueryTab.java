@@ -28,6 +28,8 @@ public class QueryTab extends JPanel {
 
         this.correctButton = new JButton("Correct");
         this.incorrectButton = new JButton("Incorrect");
+        this.correctButton.setName(CORRECT_BUTTON_NAME);
+        this.incorrectButton.setName(INCORRECT_BUTTON_NAME);
         this.dp = new DrawingPanel();
 
         this.correctButton.addActionListener(e -> {
@@ -126,6 +128,10 @@ public class QueryTab extends JPanel {
         JButton clearButton = new JButton("Clear");
         JButton queryButton = new JButton("Query");
 
+        brushPlus.setName(BRUSH_PLUS_BUTTON_NAME);
+        brushMinus.setName(BRUSH_MINUS_BUTTON_NAME);
+        clearButton.setName(CLEAR_BUTTON_NAME);
+        queryButton.setName(QUERY_BUTTON_NAME);
 
         brushPlus.addActionListener(e -> dp.brushPlus());
         brushMinus.addActionListener(e -> dp.brushMinus());
@@ -222,4 +228,11 @@ public class QueryTab extends JPanel {
 
         return maxIndex;
     }
+
+    public final static String QUERY_BUTTON_NAME = "QueryButton";
+    public final static String CLEAR_BUTTON_NAME = "ClearButton";
+    public final static String BRUSH_PLUS_BUTTON_NAME = "BrushPlusButton";
+    public final static String BRUSH_MINUS_BUTTON_NAME = "BrushMinusButton";
+    public final static String CORRECT_BUTTON_NAME = "CorrectButton";
+    public final static String INCORRECT_BUTTON_NAME = "IncorrectButton";
 }

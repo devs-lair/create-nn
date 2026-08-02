@@ -11,8 +11,13 @@ import java.awt.image.DataBuffer;
 import java.util.Arrays;
 
 public class BackQueryTab extends JPanel {
+
+    public static final String BACK_QUERY_PANEL_NAME = "BackQueryPanelTab";
+
     public BackQueryTab(@NotNull NeuralNetwork nn) {
         super(new GridLayout(2, 5));
+
+        setName(BACK_QUERY_PANEL_NAME);
 
         for (int i = 0; i < 10; i++) {
             double[] target = new double[10];

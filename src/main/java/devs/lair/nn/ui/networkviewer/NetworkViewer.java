@@ -16,6 +16,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 
 public class NetworkViewer extends JFrame {
+
+    public static final String OPEN_NETWORK_MENU_TITLE = "Open Network...";
+    public static final String CLOSE_MENU_TITLE = "Close";
     private final JLabel welcomeLabel;
     private final JTabbedPane tabs;
     private JFileChooser fc;
@@ -24,6 +27,7 @@ public class NetworkViewer extends JFrame {
         super(FRAME_TITLE);
 
         this.tabs = new JTabbedPane();
+        this.tabs.setName(TABS_NAME);
 
         createMenu();
         add(welcomeLabel = new JLabel("Open Neural Network", SwingConstants.CENTER));
@@ -41,14 +45,14 @@ public class NetworkViewer extends JFrame {
         JMenu file = new JMenu("File");
         menuBar.add(file);
 
-        file.add(new JMenuItem(new AbstractAction("Open Network...") {
+        file.add(new JMenuItem(new AbstractAction(OPEN_NETWORK_MENU_TITLE) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 openFileChooser();
             }
         }));
 
-        file.add(new JMenuItem(new AbstractAction("Close") {
+        file.add(new JMenuItem(new AbstractAction(CLOSE_MENU_TITLE) {
             @Override
             public void actionPerformed(ActionEvent e) {
                 dispose();
@@ -87,9 +91,9 @@ public class NetworkViewer extends JFrame {
         remove(tabs);
 
         tabs.removeAll();
-        tabs.addTab("Info", new InfoTab(nn, path));
-        tabs.addTab("Query", new QueryTab(nn));
-        tabs.addTab("Back query", new BackQueryTab(nn));
+        tabs.addTab(INFO_TAB_TITLE, new InfoTab(nn, path));
+        tabs.addTab(QUERY_TAB_TITLE, new QueryTab(nn));
+        tabs.addTab(BACK_QUERY_TAB_TITLE, new BackQueryTab(nn));
         tabs.setBorder(BorderFactory.createEmptyBorder(0,5,5,5));
         add(tabs, BorderLayout.CENTER);
 
@@ -105,4 +109,8 @@ public class NetworkViewer extends JFrame {
 
     public final static String FRAME_TITLE = "Network Viewer";
     public final static String IMPORT_ERROR_TEXT = "Import Error";
+    public static final String TABS_NAME = "TabsName";
+    public static final String INFO_TAB_TITLE = "Info";
+    public static final String QUERY_TAB_TITLE = "Query";
+    public static final String BACK_QUERY_TAB_TITLE = "Back query";
 }

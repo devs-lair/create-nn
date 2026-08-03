@@ -1,18 +1,25 @@
 package devs.lair.nn;
 
 import devs.lair.nn.ui.MnistCsvViewer;
+import org.apache.commons.io.output.NullPrintStream;
 import org.junit.jupiter.api.*;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Duration;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class NetworkTrainerTest {
 
@@ -44,6 +51,54 @@ public class NetworkTrainerTest {
         assertThat(validateFile).isNotNull();
         double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
         assertThat(performance).isGreaterThan(0.45);
+    }
+
+    @Test
+    @DisplayName("Train 100 records and validate")
+    public void train100recordsAndPrint() {
+        NetworkTrainer.setPrintStream(new NullPrintStream());
+        NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
+
+        //train
+        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train_100.csv");
+        assertThat(trainFile).isNotNull();
+        Duration duration = NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()));
+        assertThat(duration).isNotNull();
+
+        //validate
+        URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test_10.csv");
+        assertThat(validateFile).isNotNull();
+        double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
+        assertThat(performance).isGreaterThan(0.45);
+    }
+
+    @Test
+    @DisplayName("Private constructor call (coverage test")
+    void callPrivateConstructorTest() throws NoSuchMethodException {
+        Constructor<NetworkTrainer> pcc = NetworkTrainer.class.getDeclaredConstructor();
+        pcc.setAccessible(true);
+
+        assertThatThrownBy(pcc::newInstance)
+                .isInstanceOf(InvocationTargetException.class);
+    }
+
+    @Test
+    @DisplayName("IO exception test")
+    void ioExceptionTest() {
+        NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
+
+        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train_100.csv");
+        assertThat(trainFile).isNotNull();
+        Path path = Paths.get(trainFile.getFile());
+        try (MockedStatic<Files> files = Mockito.mockStatic(Files.class)) {
+            files.when(() -> Files.newBufferedReader(path)).thenThrow(IOException.class);
+            assertThatThrownBy(() -> NetworkTrainer.trainNetwork(nn, path))
+                    .isNotInstanceOf(IllegalStateException.class);
+
+            assertThatThrownBy(() -> NetworkTrainer.validateNetwork(nn, path))
+                    .isNotInstanceOf(IllegalStateException.class);
+        }
+
     }
 
     @Test

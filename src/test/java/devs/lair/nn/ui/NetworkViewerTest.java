@@ -1,5 +1,6 @@
 package devs.lair.nn.ui;
 
+import devs.lair.nn.ui.networkviewer.DrawingPanel;
 import devs.lair.nn.ui.networkviewer.NetworkViewer;
 import devs.lair.nn.ui.networkviewer.tabs.BackQueryTab;
 import devs.lair.nn.ui.networkviewer.tabs.QueryTab;
@@ -109,6 +110,18 @@ public class NetworkViewerTest extends AssertJSwingTestCaseTemplate {
         incorrectButton.click();
         incorrectButton.requireDisabled();
         correctButton.requireDisabled();
+
+        frame.panel(DrawingPanel.DRAWING_PANEL_NAME);
+        frame.click();
+
+        ComponentFinder finder = robot().finder();
+        DrawingPanel drawingPanel = finder.find(new GenericTypeMatcher<>(DrawingPanel.class) {
+            protected boolean isMatching(@NotNull DrawingPanel panel) {
+                return DrawingPanel.DRAWING_PANEL_NAME.equals(panel.getName());
+            }
+        });
+
+        drawingPanel.shade();
     }
 
     @Test

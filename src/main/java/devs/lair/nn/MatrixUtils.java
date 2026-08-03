@@ -246,7 +246,7 @@ public class MatrixUtils {
         }
     }
 
-    private static void checkElementsOperationCompatible(double[][] ma, double[][] mb) {
+    public static void checkElementsOperationCompatible(double[][] ma, double[][] mb) {
         if (noChecks) return;
 
         checkEmpty(ma);

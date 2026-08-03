@@ -4,10 +4,13 @@ import devs.lair.nn.ui.MnistCsvViewer;
 import org.junit.jupiter.api.*;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.file.Paths;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 public class NetworkStorageTest {
@@ -51,5 +54,16 @@ public class NetworkStorageTest {
 
         double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
         assertThat(performance).isGreaterThan(0.5);
+    }
+
+    @Test
+    @DisplayName("Private constructor call (coverage test")
+    void callPrivateConstructorTest() throws NoSuchMethodException {
+        Constructor<NetworkStorage> pcc = NetworkStorage.class.getDeclaredConstructor();
+        pcc.setAccessible(true);
+
+        assertThatThrownBy(pcc::newInstance)
+                .isInstanceOf(InvocationTargetException.class);
+
     }
 }

@@ -13,6 +13,10 @@ import java.util.List;
 
 public class NetworkStorage {
 
+    private NetworkStorage() {
+        throw new UnsupportedOperationException();
+    }
+
     public static NeuralNetwork loadFromFile(@NotNull Path path) {
         Checker.checkFile(path);
         try {
@@ -35,7 +39,7 @@ public class NetworkStorage {
 
             nn.initWeights(ihw, how);
             return nn;
-        } catch (IOException e) {
+        } catch (Exception e) {
             throw new IllegalStateException("Can not load from file", e);
         }
     }

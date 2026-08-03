@@ -18,6 +18,10 @@ import java.util.List;
 public class NetworkTrainer {
     private static PrintStream out = System.out;
 
+    private NetworkTrainer() {
+        throw new UnsupportedOperationException();
+    }
+
     public static void setPrintStream(@Nullable PrintStream out) {
         NetworkTrainer.out = out;
     }

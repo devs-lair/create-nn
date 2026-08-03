@@ -13,12 +13,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class DrawingPanel extends JPanel {
+    public static final String DRAWING_PANEL_NAME = "DrawingPanelName";
     private final List<PointAndBrush> points;
     private int brushSize = 30;
     private boolean shade;
 
     public DrawingPanel() {
 
+        setName(DRAWING_PANEL_NAME);
         points = new ArrayList<>();
         setSize(280, 280);
         setPreferredSize(new Dimension(280, 280));

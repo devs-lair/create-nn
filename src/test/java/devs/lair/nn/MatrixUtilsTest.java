@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
-import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class MatrixUtilsTest {
@@ -213,6 +213,35 @@ class MatrixUtilsTest {
         assertThat(c[1][1]).isEqualTo(0);
     }
 
+    @Test
+    @DisplayName("Divide on scalar")
+    void divideToScalar() {
+        double[][] a = new double[][] {{2, 2},{2, 2}};
+        double[][] c = MatrixUtils.divide(a, 2);
+
+        assertThat(c).hasDimensions(2, 2);
+
+        assertThat(c[0][0]).isEqualTo(1);
+        assertThat(c[0][1]).isEqualTo(1);
+        assertThat(c[1][0]).isEqualTo(1);
+        assertThat(c[1][1]).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("Divide on scalar")
+    void divideByElements() {
+        double[][] a = new double[][] {{2, 2},{2, 2}};
+        double[][] b = new double[][] {{2, 2},{2, 2}};
+        double[][] c = MatrixUtils.byElements(a, b, MatrixUtils.Operation.DIVIDE);
+
+        assertThat(c).hasDimensions(2, 2);
+
+        assertThat(c[0][0]).isEqualTo(1);
+        assertThat(c[0][1]).isEqualTo(1);
+        assertThat(c[1][0]).isEqualTo(1);
+        assertThat(c[1][1]).isEqualTo(1);
+    }
+
     //==== Negative Test ====
 
     @Test
@@ -239,7 +268,35 @@ class MatrixUtilsTest {
 
         assertThatThrownBy(() -> MatrixUtils.checkMultiplyMatrixCompatible(ma, mb))
                 .isInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() -> MatrixUtils.checkElementsOperationCompatible(ma, mb))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        double[][] md = new double[][]{{1}, {2}};
+        assertThatThrownBy(() -> MatrixUtils.checkElementsOperationCompatible(ma, md))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        MatrixUtils.setNoChecks(true);
+        assertThatCode(()->MatrixUtils.checkEmpty(new double[]{})).doesNotThrowAnyException();
+        MatrixUtils.setNoChecks(false);
+            }
+
+    @Test
+    @DisplayName("Divide by zero")
+    void divideMatrixByZiro() {
+        double[][] matrix = new double[][] {{2, 2}, {1,1}};
+        assertThatThrownBy(()-> MatrixUtils.divide(matrix, 0));
     }
+
+    @Test
+    @DisplayName("By elements wron opertation")
+    void byElementsWrongOperation() {
+        double[][] matrix = new double[][] {{2, 2}, {1,1}};
+        assertThatThrownBy(()-> MatrixUtils.byElements(matrix, matrix,
+                MatrixUtils.Operation.SUBTRACT_FROM_SCALAR));
+
+    }
+
 
     @Test
     @DisplayName("Private constructor call (coverage test")

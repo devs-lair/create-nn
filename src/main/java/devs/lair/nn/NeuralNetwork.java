@@ -36,17 +36,17 @@ public class NeuralNetwork {
         initWeights();
     }
 
-    public void train(double[] inputs, double[] targets) {
-        if (inputs.length != inputNodesNumber) {
-            throw new IllegalArgumentException("Wrong count of inputs");
-        }
+    public void train(double[][] inputMatrix, double[][] targetMatrix) {
+//        if (inputs.length != inputNodesNumber) {
+//            throw new IllegalArgumentException("Wrong count of inputs");
+//        }
+//
+//        if (targets.length != outputNodesNumber) {
+//            throw new IllegalArgumentException("Wrong count of outputs");
+//        }
 
-        if (targets.length != outputNodesNumber) {
-            throw new IllegalArgumentException("Wrong count of outputs");
-        }
-
-        double[][] inputMatrix = MatrixUtils.transformToMatrix(inputs);
-        double[][] targetMatrix = MatrixUtils.transformToMatrix(targets);
+//        double[][] inputMatrix = MatrixUtils.transformToMatrix(inputs);
+//        double[][] targetMatrix = MatrixUtils.transformToMatrix(targets);
 
         double[][] hiddenInputs = MatrixUtils.multiply(inputToHiddenWeights, inputMatrix);
         double[][] hiddenOutputs = MatrixUtils.applyFunction(hiddenInputs, activationFunction);
@@ -83,12 +83,12 @@ public class NeuralNetwork {
         inputToHiddenWeights = MatrixUtils.add(inputToHiddenWeights, deltaInputsToHidden);
     }
 
-    public double[][] query(double[] inputs) {
-        if (inputs.length != inputNodesNumber) {
+    public double[][] query(double[][] inputMatrix) {
+        if (inputMatrix.length != inputNodesNumber) {
             throw new IllegalArgumentException("Wrong count of inputs");
         }
 
-        double[][] inputMatrix = MatrixUtils.transformToMatrix(inputs);
+        //double[][] inputMatrix = MatrixUtils.transformToMatrix(inputs);
         double[][] hiddenInputs = MatrixUtils.multiply(inputToHiddenWeights, inputMatrix);
         double[][] hiddenOutputs = MatrixUtils.applyFunction(hiddenInputs, activationFunction);
         double[][] finalInputs = MatrixUtils.multiply(hiddenToOutputsWeights, hiddenOutputs);

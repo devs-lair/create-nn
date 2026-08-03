@@ -154,14 +154,14 @@ public class QueryTab extends JPanel {
         BufferedImage image = ImageUtils.blur(dp.getImage());
         BufferedImage scaledImage = ImageUtils.scale(image, 0.1f);
 
-        int[] query = new int[scaledImage.getWidth() * scaledImage.getHeight()];
+        int[][] query = new int[scaledImage.getWidth() * scaledImage.getHeight()][1];
         DataBuffer dataBuffer = scaledImage.getRaster().getDataBuffer();
 
         for (int i = 0; i < query.length; i++) {
-            query[i] = 255 - dataBuffer.getElem(i);
+            query[i][0] = 255 - dataBuffer.getElem(i);
         }
 
-        double[] input = normalizeQuery(query);
+        double[][] input = normalizeQuery(query);
         double[][] answer = nn.query(input);
 
         setAnswerToPanel(answer);
@@ -200,7 +200,6 @@ public class QueryTab extends JPanel {
                     return String.class;
                 }
 
-
                 return Double.class;
             }
         };
@@ -208,10 +207,10 @@ public class QueryTab extends JPanel {
         answerTable.setModel(model);
     }
 
-    private double[] normalizeQuery(int[] query) {
-        double[] result = new double[query.length];
+    private double[][] normalizeQuery(int[][] query) {
+        double[][] result = new double[query.length][1];
         for (int i = 0; i < query.length; i++) {
-            result[i] = (query[i] / (double) 255) * 0.99 + 0.01;
+            result[i][0] = (query[i][0] / (double) 255) * 0.99 + 0.01;
         }
         return result;
     }

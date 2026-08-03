@@ -13,7 +13,7 @@ class NeuralNetworkTest {
         NeuralNetwork nn = new NeuralNetwork(3, 3,3, 0.3);
         nn.setWeightInitStrategy(WeightInitStrategy.ONES);
 
-        double[][] answer = nn.query(new double[]{1.0, 1.0, 1.0});
+        double[][] answer = nn.query(new double[][]{{1.0}, {1.0}, {1.0}});
 
         assertThat(answer).hasDimensions(3, 1);
         assertThat(answer[0][0]).isCloseTo(0.94571649, within(0.0001));
@@ -27,7 +27,7 @@ class NeuralNetworkTest {
         NeuralNetwork nn = new NeuralNetwork(3, 3,3, 0.3);
         nn.setWeightInitStrategy(WeightInitStrategy.ZEROS);
 
-        double[][] answer = nn.query(new double[] {1.0, 1.0, 1.0});
+        double[][] answer = nn.query(new double[][] {{1.0}, {1.0}, {1.0}});
 
         assertThat(answer).hasDimensions(3, 1);
         assertThat(answer[0][0]).isCloseTo(0.5, within(0.0001));
@@ -39,7 +39,7 @@ class NeuralNetworkTest {
     @DisplayName("Create network and query with random weights")
     void createNetworkWithRandomWeights() {
         NeuralNetwork nn = new NeuralNetwork(3, 3,3, 0.3);
-            double[][] answer = nn.query(new double[] {1.0, 1.0, 1.0});
+            double[][] answer = nn.query(new double[][] {{1.0}, {1.0}, {1.0}});
         assertThat(answer).hasDimensions(3, 1);
     }
 
@@ -63,7 +63,7 @@ class NeuralNetworkTest {
     @DisplayName("Wrong inputs size in query")
     void wrongInputsSizeInQuery() {
         NeuralNetwork nn = new NeuralNetwork(3, 3,3, 0.3);
-        assertThatThrownBy(() -> nn.query(new double[] {1}))
+        assertThatThrownBy(() -> nn.query(new double[][] {{1}}))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -71,10 +71,10 @@ class NeuralNetworkTest {
     @DisplayName("Wrong inputs size in tain")
     void wrongInputsSizeInTrain() {
         NeuralNetwork nn = new NeuralNetwork(3, 3,3, 0.3);
-        assertThatThrownBy(() -> nn.train(new double[] {1}, new double[] {1, 2 ,3}))
+        assertThatThrownBy(() -> nn.train(new double[][] {{1}}, new double[][] {{1}, {2} ,{3}}))
                 .isInstanceOf(IllegalArgumentException.class);
 
-        assertThatThrownBy(() -> nn.train(new double[] {3, 1, 1}, new double[] {1}))
+        assertThatThrownBy(() -> nn.train(new double[][] {{3}, {1}, {1}}, new double[][] {{1}}))
                 .isInstanceOf(IllegalArgumentException.class);
     }
 }

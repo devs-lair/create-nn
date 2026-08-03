@@ -30,7 +30,7 @@ public class NetworkTrainerTest {
     }
 
     @AfterEach
-    void AfterEach() {
+    void afterEach() {
         MatrixUtils.setNoChecks(false);
         NetworkTrainer.setPrintStream(System.out);
     }
@@ -127,11 +127,13 @@ public class NetworkTrainerTest {
         assertThat(performance).isGreaterThan(0.5);
     }
 
-    @Test
+    @RepeatedTest(5)
     @DisplayName("Train 10000 records")
     @Disabled("Long running test")
     @Tag("slow")
     public void train10000records() {
+        MatrixUtils.setNoChecks(false);
+        NetworkTrainer.setPrintStream(System.out);
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
 
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
@@ -147,11 +149,13 @@ public class NetworkTrainerTest {
         assertThat(performance).isGreaterThan(0.8);
     }
 
-    @Test
+    @RepeatedTest(5)
     @DisplayName("Train 60000 records")
     @Disabled("Long running test")
     @Tag("slow")
     public void train60000records() {
+        MatrixUtils.setNoChecks(false);
+        //NetworkTrainer.setPrintStream(System.out);
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
 
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");

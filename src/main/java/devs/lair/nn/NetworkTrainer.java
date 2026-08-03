@@ -35,24 +35,44 @@ public class NetworkTrainer {
                                         int epochs) {
         Checker.checkFile(csvFile);
 
+        double[][] targets = new double[nn.getOutputNodesNumber()][1];
+        for (double[] row : targets) {
+            row[0] = 0.01;
+        }
+
+        double[][] inputs = new double[nn.getInputNodesNumber()][1];
+
         Instant startTime = Instant.now();
         String line;
+
+        int prevNumber = -1;
         int totalRecords = 0;
-        for (int i = 0; i < epochs; i++) {
+
+        for (int e = 0; e < epochs; e++) {
             if (out != null) {
-                out.printf("Start epoch %d, start at %s%n", i + 1, new Date());
+                out.printf("Start epoch %d, start at %s%n", e + 1, new Date());
             }
 
             int epochRecords = 0;
             try (BufferedReader reader = Files.newBufferedReader(csvFile)) {
                 while ((line = reader.readLine()) != null) {
-
                     String[] split = line.split(",");
                     Checker.checkSplit(split);
 
-                    double[] target = converNumberToTargetArray(Integer.parseInt(split[0]));
-                    double[] inputs = convertLineToInputArray(split);
-                    nn.train(inputs, target);
+                    //prepare targets
+                    int currentNumber = Integer.parseInt(split[0]);
+                    targets[currentNumber][0] = 0.99;
+                    if (prevNumber != -1) {
+                        targets[prevNumber][0] = 0.01;
+                    }
+                    prevNumber = currentNumber;
+
+                    //prepare inputs
+                    for (int i = 0; i < inputs.length; i++) {
+                        inputs[i][0] = ((double) Integer.parseInt(split[i+1]) / 255) * 0.99 + 0.01;
+                    }
+
+                    nn.train(inputs, targets);
                     epochRecords++;
 
                     if (epochRecords % 10000 == 0 && out != null) {
@@ -60,11 +80,11 @@ public class NetworkTrainer {
                     }
                 }
                 totalRecords += epochRecords;
-            } catch (IOException e) {
-                throw new IllegalStateException("Error while reading file: " + csvFile, e);
+            } catch (IOException ex) {
+                throw new IllegalStateException("Error while reading file: " + csvFile, ex);
             }
             if (out != null) {
-                out.printf("End epoch %d, records processed %d, duration %s ms %n", i + 1,
+                out.printf("End epoch %d, records processed %d, duration %s ms %n", e + 1,
                         epochRecords, Duration.between(startTime, Instant.now()).toMillis());
             }
         }
@@ -92,16 +112,19 @@ public class NetworkTrainer {
         int totalRecords = 0;
         int correctRecords = 0;
         List<String> wrongRecords = new ArrayList<>();
-
+        double[][] inputs = new double[nn.getInputNodesNumber()][1];
         try (BufferedReader reader = Files.newBufferedReader(csvFile)) {
             String line;
             while ((line = reader.readLine()) != null) {
                 totalRecords++;
                 String[] split = line.split(",");
 
-                double[] inputs = convertLineToInputArray(split);
-                double[][] output = nn.query(inputs);
+                //prepare inputs
+                for (int i = 0; i < inputs.length; i++) {
+                    inputs[i][0] = ((double) Integer.parseInt(split[i+1]) / 255) * 0.99 + 0.01;
+                }
 
+                double[][] output = nn.query(inputs);
                 int answer = getIndexOfMaxElementInOutputs(output);
                 int number = Integer.parseInt(split[0]);
 
@@ -141,17 +164,14 @@ public class NetworkTrainer {
         return maxIndex;
     }
 
-    private static double[] convertLineToInputArray(String[] split) {
-        double[] result = new double[split.length - 1];
-        for (int i = 1; i < split.length; i++) {
-            result[i - 1] = ((double) Integer.parseInt(split[i]) / 255) * 0.99 + 0.01;
-        }
-        return result;
+    private static double[][] convertLineToInputArray(double[][] inputs, @NotNull String[] split) {
+
+        return inputs;
     }
 
-    private static double[] converNumberToTargetArray(int number) {
-        double[] array = new double[]{0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
-        array[number] = 0.99;
-        return array;
-    }
+//    private static double[][] converNumberToTargetArray(int number) {
+//        double[] array = new double[]{0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01};
+//        array[number] = 0.99;
+//        return array;
+//    }
 }

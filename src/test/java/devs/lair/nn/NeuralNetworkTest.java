@@ -65,6 +65,16 @@ class NeuralNetworkTest {
         NeuralNetwork nn = new NeuralNetwork(3, 3,3, 0.3);
         assertThatThrownBy(() -> nn.query(new double[] {1}))
                 .isInstanceOf(IllegalArgumentException.class);
+    }
 
+    @Test
+    @DisplayName("Wrong inputs size in tain")
+    void wrongInputsSizeInTrain() {
+        NeuralNetwork nn = new NeuralNetwork(3, 3,3, 0.3);
+        assertThatThrownBy(() -> nn.train(new double[] {1}, new double[] {1, 2 ,3}))
+                .isInstanceOf(IllegalArgumentException.class);
+
+        assertThatThrownBy(() -> nn.train(new double[] {3, 1, 1}, new double[] {1}))
+                .isInstanceOf(IllegalArgumentException.class);
     }
 }

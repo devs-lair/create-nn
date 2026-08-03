@@ -49,8 +49,17 @@ public class NetworkTrainerTest {
         //validate
         URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test_10.csv");
         assertThat(validateFile).isNotNull();
-        double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
-        assertThat(performance).isGreaterThan(0.45);
+        ValidationReport report = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile()));
+        assertThat(report.getPerformance()).isGreaterThan(0.45);
+        assertThat(report.getIncorrectRecords()).isNotEmpty();
+        assertThat(report.getDuration()).isNotNull();
+        assertThat(report.getFilePath()).isNotNull();
+        assertThat(report.getNeuralNetwork()).isNotNull();
+        assertThat(report.getTotalCorrectCount()).isGreaterThan(0);
+        assertThat(report.getTotalRecordsCount()).isGreaterThan(0);
+
+
+
     }
 
     @Test
@@ -98,7 +107,6 @@ public class NetworkTrainerTest {
             assertThatThrownBy(() -> NetworkTrainer.validateNetwork(nn, path))
                     .isNotInstanceOf(IllegalStateException.class);
         }
-
     }
 
     @Test

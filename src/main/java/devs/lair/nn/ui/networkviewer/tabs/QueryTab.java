@@ -27,9 +27,13 @@ public class QueryTab extends JPanel {
         this.nn = nn;
 
         this.correctButton = new JButton("Correct");
-        this.incorrectButton = new JButton("Incorrect");
         this.correctButton.setName(CORRECT_BUTTON_NAME);
+        this.correctButton.setEnabled(false);
+
+        this.incorrectButton = new JButton("Incorrect");
         this.incorrectButton.setName(INCORRECT_BUTTON_NAME);
+        this.incorrectButton.setEnabled(false);
+
         this.dp = new DrawingPanel();
 
         this.correctButton.addActionListener(e -> {
@@ -196,11 +200,8 @@ public class QueryTab extends JPanel {
                     return String.class;
                 }
 
-                if (columnIndex == 1) {
-                    return Double.class;
-                }
 
-                return Object.class;
+                return Double.class;
             }
         };
 

@@ -3,6 +3,8 @@ package devs.lair.nn;
 import devs.lair.nn.util.Checker;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Random;
 import java.util.function.DoubleFunction;
 
@@ -47,40 +49,32 @@ public class NeuralNetwork {
 
 //        double[][] inputMatrix = MatrixUtils.transformToMatrix(inputs);
 //        double[][] targetMatrix = MatrixUtils.transformToMatrix(targets);
-
-        double[][] hiddenInputs = MatrixUtils.multiply(inputToHiddenWeights, inputMatrix);
-        double[][] hiddenOutputs = MatrixUtils.applyFunction(hiddenInputs, activationFunction);
-        double[][] finalInputs = MatrixUtils.multiply(hiddenToOutputsWeights, hiddenOutputs);
-        double[][] finalOutputs = MatrixUtils.applyFunction(finalInputs, activationFunction);
+        //long start = System.currentTimeMillis();
+        double[][] hiddenOutputs = MatrixUtils.multiplyAndApplyFunction(inputToHiddenWeights, inputMatrix, activationFunction);
+        double[][] finalOutputs = MatrixUtils.multiplyAndApplyFunction(hiddenToOutputsWeights, hiddenOutputs, activationFunction);
 
         double[][] outputErrors = MatrixUtils.subtract(targetMatrix, finalOutputs);
-        double[][] hiddenErrors = MatrixUtils.multiply(MatrixUtils.transpose(hiddenToOutputsWeights), outputErrors);
+        double[][] hiddenErrors = MatrixUtils.transposeFirstAndMultiply(hiddenToOutputsWeights, outputErrors);
 
+        //System.out.println("1 Before delta " + (System.currentTimeMillis() - start) );
         //self.who += self.lr * numpy.dot((output_errors * final_outputs * (1.0 - final_outputs)), numpy.transpose(hidden_outputs))
-        double[][] deltaHiddenToOutputs = MatrixUtils.multiply(
-                MatrixUtils.multiply(
-                        MatrixUtils.multiplyByElements(
-                                outputErrors,
-                                MatrixUtils.multiplyByElements(
-                                        finalOutputs,
-                                        MatrixUtils.subtract(1, finalOutputs))),
-                        MatrixUtils.transpose(hiddenOutputs)),
-                learningRate);
+        double[][] deltaHiddenToOutputs =
+                MatrixUtils.multiplyOnTransposeAndApply(
+                        MatrixUtils.multiplyByElements(List.of(outputErrors, finalOutputs, finalOutputs), Arrays.asList(null, null, (d) -> 1 - d)),
+                        hiddenOutputs, (d) -> d * learningRate);
 
         hiddenToOutputsWeights = MatrixUtils.add(hiddenToOutputsWeights, deltaHiddenToOutputs);
 
+        //System.out.println("2 Before delta " + (System.currentTimeMillis() - start) );
         //self.wih += self.lr * numpy.dot((hidden_errors * hidden_outputs * (1.0 - hidden_outputs)), numpy.transpose(inputs))
-        double[][] deltaInputsToHidden = MatrixUtils.multiply(
-                MatrixUtils.multiply(
-                        MatrixUtils.multiplyByElements(
-                                hiddenErrors,
-                                MatrixUtils.multiplyByElements(
-                                        hiddenOutputs,
-                                        MatrixUtils.subtract(1, hiddenOutputs))),
-                        MatrixUtils.transpose(inputMatrix)),
-                learningRate);
+        double[][] deltaInputsToHidden = MatrixUtils.multiplyOnTransposeAndApply(
+                        MatrixUtils.multiplyByElements(List.of(hiddenErrors, hiddenOutputs, hiddenOutputs), Arrays.asList(null, null, (d) -> 1 - d)),
+                        inputMatrix,
+                        (d) -> d * learningRate);
 
+        //System.out.println("Before add " + (System.currentTimeMillis() - start) );
         inputToHiddenWeights = MatrixUtils.add(inputToHiddenWeights, deltaInputsToHidden);
+        //System.out.println("After all " + (System.currentTimeMillis() - start) );
     }
 
     public double[][] query(double[][] inputMatrix) {

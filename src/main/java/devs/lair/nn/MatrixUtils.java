@@ -1,8 +1,11 @@
 package devs.lair.nn;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
 import java.util.function.DoubleFunction;
+import java.util.function.Function;
 
 public class MatrixUtils {
     private static boolean noChecks = false;
@@ -58,12 +61,94 @@ public class MatrixUtils {
         return result;
     }
 
+    public static double[][] multiplyOnTransposeAndApply(double[][] ma,
+                                                         double[][] mb,
+                                                         @NotNull Function<Double, Double> doubleFunction) {
+
+        double[][] result = new double[ma.length][mb.length];
+        for (int i = 0; i < result.length; i++) {
+            for (int j = 0; j < result[i].length; j++) {
+                double cell = 0;
+                for (int k = 0; k < mb[0].length; k++) {
+                    cell += ma[i][k] * mb[j][k];
+                }
+                result[i][j] = doubleFunction.apply(cell);
+            }
+        }
+
+        return result;
+    }
+
+    public static double[][] multiplyAndApplyFunction(double[][] ma,
+                                                      double[][] mb,
+                                                      @NotNull DoubleFunction<Double> doubleFunction) {
+        checkMultiplyMatrixCompatible(ma, mb);
+
+        double[][] result = new double[ma.length][mb[0].length];
+        for (int i = 0; i < result.length; i++) {
+            for (int j = 0; j < result[i].length; j++) {
+                double cell = 0;
+                for (int k = 0; k < mb.length; k++) {
+                    cell += ma[i][k] * mb[k][j];
+                }
+                result[i][j] = doubleFunction.apply(cell);
+            }
+        }
+
+        return result;
+    }
+
+    public static double[][] transposeFirstAndMultiply(double[][] ma, double[][] mb) {
+        checkMultiplyMatrixCompatible(ma, mb);
+
+        double[][] result = new double[ma[0].length][mb[0].length];
+        for (int i = 0; i < result.length; i++) {
+            for (int j = 0; j < result[i].length; j++) {
+                double cell = 0;
+                for (int k = 0; k < mb.length; k++) {
+                    cell += ma[k][i] * mb[k][j];
+                }
+                result[i][j] = cell;
+            }
+        }
+
+        return result;
+    }
+
     public static double[][] multiply(double[][] matrix, double scalar) {
         return withScalar(matrix, scalar, Operation.MULTIPLY);
     }
 
     public static double[][] multiplyByElements(double[][] ma, double[][] mb) {
         return byElements(ma, mb, Operation.MULTIPLY);
+    }
+
+    public static double[][] multiplyByElements(@NotNull List<double[][]> matrices,
+                                                @NotNull List<@Nullable Function<Double, Double>> functions) {
+
+        if (matrices.isEmpty()) {
+            throw new IllegalArgumentException("Empty matrices list");
+        }
+
+        if (matrices.size() != functions.size()) {
+            throw new IllegalArgumentException("Wrong function list");
+        }
+
+        double[][] first = matrices.getFirst();
+        double[][] result = new double[first.length][first[0].length];
+        for (int i = 0; i < result.length; i++) {
+            for (int j = 0; j < result[0].length; j++) {
+                double cell = 1;
+                for (int k = 0; k < matrices.size(); k++) {
+                    Function<Double, Double> doubleFunction = functions.get(k);
+                    cell *= doubleFunction == null
+                            ? matrices.get(k)[i][j]
+                            : doubleFunction.apply(matrices.get(k)[i][j]);
+                }
+                result[i][j] = cell;
+            }
+        }
+        return result;
     }
 
     public static double[][] divide(double[][] matrix, double scalar) {
@@ -83,7 +168,7 @@ public class MatrixUtils {
     }
 
     public static double[][] subtract(double scalar, double[][] matrix) {
-                return withScalar(matrix, scalar, Operation.SUBTRACT_FROM_SCALAR);
+        return withScalar(matrix, scalar, Operation.SUBTRACT_FROM_SCALAR);
     }
 
     public static double[][] subtract(double[][] matrix, double scalar) {

@@ -57,9 +57,6 @@ public class NetworkTrainerTest {
         assertThat(report.getNeuralNetwork()).isNotNull();
         assertThat(report.getTotalCorrectCount()).isGreaterThan(0);
         assertThat(report.getTotalRecordsCount()).isGreaterThan(0);
-
-
-
     }
 
     @Test
@@ -127,7 +124,7 @@ public class NetworkTrainerTest {
         assertThat(performance).isGreaterThan(0.5);
     }
 
-    @RepeatedTest(5)
+    @Test
     @DisplayName("Train 10000 records")
     @Disabled("Long running test")
     @Tag("slow")
@@ -154,7 +151,7 @@ public class NetworkTrainerTest {
     @Disabled("Long running test")
     @Tag("slow")
     public void train60000records() {
-        MatrixUtils.setNoChecks(false);
+        MatrixUtils.setNoChecks(true);
         //NetworkTrainer.setPrintStream(System.out);
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
 

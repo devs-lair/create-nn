@@ -33,6 +33,7 @@ public class NetworkTrainer {
     public static Duration trainNetwork(@NotNull NeuralNetwork nn,
                                         @NotNull Path csvFile,
                                         int epochs) {
+        //long start = System.currentTimeMillis();
         Checker.checkFile(csvFile);
 
         double[][] targets = new double[nn.getOutputNodesNumber()][1];
@@ -71,8 +72,9 @@ public class NetworkTrainer {
                     for (int i = 0; i < inputs.length; i++) {
                         inputs[i][0] = ((double) Integer.parseInt(split[i+1]) / 255) * 0.99 + 0.01;
                     }
-
+                    //System.out.println("Before train " + (System.currentTimeMillis() - start));
                     nn.train(inputs, targets);
+                    //System.out.println("After train " + (System.currentTimeMillis() - start));
                     epochRecords++;
 
                     if (epochRecords % 10000 == 0 && out != null) {

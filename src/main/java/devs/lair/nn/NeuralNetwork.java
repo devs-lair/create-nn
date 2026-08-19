@@ -3,7 +3,9 @@ package devs.lair.nn;
 import devs.lair.nn.util.Checker;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.List;
 import java.util.Random;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.DoubleFunction;
 
 public class NeuralNetwork {
@@ -16,6 +18,8 @@ public class NeuralNetwork {
             = (double x) -> 1 / (1 + Math.exp(-x));
     private final DoubleFunction<Double> inverseActivationFunction
             = (double y) -> Math.log(y / (1 - y));
+
+    private final ReentrantLock lock = new ReentrantLock();
 
     private double[][] inputToHiddenWeights;
     private double[][] hiddenToOutputsWeights;
@@ -81,6 +85,82 @@ public class NeuralNetwork {
                 learningRate);
 
         inputToHiddenWeights = MatrixUtils.add(inputToHiddenWeights, deltaInputsToHidden);
+    }
+
+    public void train(@NotNull List<TrainRecord> batch) {
+        for (TrainRecord trainRecord : batch) {
+            double[] inputs = trainRecord.inputs();
+            double[] targets = trainRecord.targets();
+
+            if (inputs.length != inputNodesNumber) {
+                throw new IllegalArgumentException("Wrong count of inputs");
+            }
+
+            if (targets.length != outputNodesNumber) {
+                throw new IllegalArgumentException("Wrong count of outputs");
+            }
+
+            double[][] inputMatrix = MatrixUtils.transformToMatrix(inputs);
+            double[][] targetMatrix = MatrixUtils.transformToMatrix(targets);
+
+            double[][] currentInputToHiddenWeights;
+            double[][] currentHiddenToOutputsWeights;
+
+            try {
+                lock.lock();
+                currentInputToHiddenWeights = getInputToHiddenWeights();
+                currentHiddenToOutputsWeights = getHiddenToOutputsWeights();
+            } finally {
+                lock.unlock();
+            }
+
+            double[][] hiddenInputs = MatrixUtils.multiply(currentInputToHiddenWeights, inputMatrix);
+            double[][] hiddenOutputs = MatrixUtils.applyFunction(hiddenInputs, activationFunction);
+            double[][] finalInputs = MatrixUtils.multiply(currentHiddenToOutputsWeights, hiddenOutputs);
+            double[][] finalOutputs = MatrixUtils.applyFunction(finalInputs, activationFunction);
+
+            double[][] outputErrors = MatrixUtils.subtract(targetMatrix, finalOutputs);
+            double[][] hiddenErrors = MatrixUtils.multiply(MatrixUtils.transpose(currentHiddenToOutputsWeights), outputErrors);
+
+            double[][] deltaHiddenToOutputs = MatrixUtils.multiply(
+                    MatrixUtils.multiply(
+                            MatrixUtils.multiplyByElements(
+                                    outputErrors,
+                                    MatrixUtils.multiplyByElements(
+                                            finalOutputs,
+                                            MatrixUtils.subtract(1, finalOutputs))),
+                            MatrixUtils.transpose(hiddenOutputs)),
+                    learningRate);
+
+            double[][] deltaInputsToHidden = MatrixUtils.multiply(
+                    MatrixUtils.multiply(
+                            MatrixUtils.multiplyByElements(
+                                    hiddenErrors,
+                                    MatrixUtils.multiplyByElements(
+                                            hiddenOutputs,
+                                            MatrixUtils.subtract(1, hiddenOutputs))),
+                            MatrixUtils.transpose(inputMatrix)),
+                    learningRate);
+
+            adjustWeights(
+                    currentInputToHiddenWeights,
+                    currentHiddenToOutputsWeights,
+                    deltaInputsToHidden,
+                    deltaHiddenToOutputs);
+        }
+    }
+
+    private void adjustWeights(double[][] currentInputToHiddenWeights,
+                               double[][] currentHiddenToOutputsWeights,
+                               double[][] deltaInputsToHidden,
+                               double[][] deltaHiddenToOutputs) {
+        try {
+            lock.lock();
+            inputToHiddenWeights = MatrixUtils.add(currentInputToHiddenWeights, deltaInputsToHidden);
+            hiddenToOutputsWeights = MatrixUtils.add(currentHiddenToOutputsWeights, deltaHiddenToOutputs);
+        } finally {
+            lock.unlock();
+        }
     }
 
     public double[][] query(double[] inputs) {

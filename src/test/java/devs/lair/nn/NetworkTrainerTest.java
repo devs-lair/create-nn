@@ -57,9 +57,6 @@ public class NetworkTrainerTest {
         assertThat(report.getNeuralNetwork()).isNotNull();
         assertThat(report.getTotalCorrectCount()).isGreaterThan(0);
         assertThat(report.getTotalRecordsCount()).isGreaterThan(0);
-
-
-
     }
 
     @Test
@@ -147,17 +144,19 @@ public class NetworkTrainerTest {
         assertThat(performance).isGreaterThan(0.8);
     }
 
-    @Test
+    @RepeatedTest(5)
     @DisplayName("Train 60000 records")
     @Disabled("Long running test")
     @Tag("slow")
     public void train60000records() {
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
+        NetworkTrainer.setPrintStream(null);
+        MatrixUtils.setNoChecks(true);
 
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
 
-        Duration duration = NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()));
+        Duration duration = NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()), 1, 6000);
         assertThat(duration).isNotNull();
 
         //validate
@@ -165,6 +164,7 @@ public class NetworkTrainerTest {
         assertThat(validateFile).isNotNull();
         double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
         assertThat(performance).isGreaterThan(0.9);
+        System.out.println(performance);
     }
 
     @Test

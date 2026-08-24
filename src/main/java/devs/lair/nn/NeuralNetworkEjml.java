@@ -3,7 +3,9 @@ package devs.lair.nn;
 import devs.lair.nn.util.Checker;
 import org.apache.commons.math3.util.FastMath;
 import org.ejml.data.DMatrixRMaj;
+import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
+import org.ejml.ops.DOperatorUnary;
 import org.ejml.simple.SimpleMatrix;
 import org.ejml.simple.SimpleOperations;
 import org.jetbrains.annotations.NotNull;
@@ -20,13 +22,12 @@ public class NeuralNetworkEjml implements INeuralNetwork {
     private final int outputNodesNumber;
     private final double learningRate;
 
-    private final ApplyDoubleFunctionOp activationFunction;
-    private final ScalarMinusMatrixOp scalarMinusMatrixOp;
+    private final DOperatorUnary activationFunction = (double v) -> 1 / (1 + Math.exp(-v));
 
     private final ReentrantLock weightsLock = new ReentrantLock();
 
-    private SimpleMatrix inputToHiddenWeights;
-    private SimpleMatrix hiddenToOutputsWeights;
+    private DMatrixRMaj inputToHiddenWeights;
+    private DMatrixRMaj hiddenToOutputsWeights;
     private WeightInitStrategy weightInitStrategy = WeightInitStrategy.RANDOM_GAUSSIAN;
 
     public NeuralNetworkEjml(int inputNodesNumber,
@@ -41,10 +42,6 @@ public class NeuralNetworkEjml implements INeuralNetwork {
         this.outputNodesNumber = outputNodesNumber;
         this.learningRate = learningRate;
 
-        activationFunction =
-                new ApplyDoubleFunctionOp((double x) -> 1 / (1 + FastMath.exp(-x)));
-        scalarMinusMatrixOp = new ScalarMinusMatrixOp(1d);
-
         initWeights();
     }
 
@@ -53,15 +50,14 @@ public class NeuralNetworkEjml implements INeuralNetwork {
         hiddenToOutputsWeights = initWeightsMatrix(outputNodesNumber, hiddenNodesNumber);
     }
 
-    private SimpleMatrix initWeightsMatrix(int rows, int columns) {
+    private DMatrixRMaj initWeightsMatrix(int rows, int columns) {
         return switch (weightInitStrategy) {
-            case ONES -> SimpleMatrix.ones(rows, columns);
-            case ZEROS -> new SimpleMatrix(rows, columns);
+            case ONES -> SimpleMatrix.ones(rows, columns).getMatrix();
+            case ZEROS -> new SimpleMatrix(rows, columns).getMatrix();
             case RANDOM_GAUSSIAN -> {
                 Random rnd = new Random(); // Инициализация генератора случайных чисел
-                DMatrixRMaj dMatrixRMaj = RandomMatrices_DDRM.rectangleGaussian(rows, columns,
+                yield RandomMatrices_DDRM.rectangleGaussian(rows, columns,
                         0, FastMath.pow(rows, -0.5), rnd);
-                yield SimpleMatrix.wrap(dMatrixRMaj);
             }
         };
     }
@@ -80,11 +76,11 @@ public class NeuralNetworkEjml implements INeuralNetwork {
                 throw new IllegalArgumentException("Wrong count of outputs");
             }
 
-            SimpleMatrix inputMatrix = new SimpleMatrix(MatrixUtils.transformToMatrix(inputs));
-            SimpleMatrix targetMatrix = new SimpleMatrix(MatrixUtils.transformToMatrix(targets));
+            DMatrixRMaj inputMatrix = new DMatrixRMaj(MatrixUtils.transformToMatrix(inputs));
+            DMatrixRMaj targetMatrix = new DMatrixRMaj(MatrixUtils.transformToMatrix(targets));
 
-            SimpleMatrix currentInputToHiddenWeights;
-            SimpleMatrix currentHiddenToOutputsWeights;
+            DMatrixRMaj currentInputToHiddenWeights;
+            DMatrixRMaj currentHiddenToOutputsWeights;
 
             try {
                 weightsLock.lock();
@@ -94,19 +90,33 @@ public class NeuralNetworkEjml implements INeuralNetwork {
                 weightsLock.unlock();
             }
 
-            SimpleMatrix hiddenInputs = currentInputToHiddenWeights.mult(inputMatrix);
-            SimpleMatrix hiddenOutputs = hiddenInputs.elementOp(activationFunction);
-            SimpleMatrix finalInputs = currentHiddenToOutputsWeights.mult(hiddenOutputs);
-            SimpleMatrix finalOutputs = finalInputs.elementOp(activationFunction);
+//            DMatrixRMaj hiddenInputs = new DMatrixRMaj();
+//            DMatrixRMaj hiddenOutputs = new DMatrixRMaj();
+//            DMatrixRMaj finalInputs = new DMatrixRMaj();
+//            DMatrixRMaj finalOutputs = new DMatrixRMaj();
+//            DMatrixRMaj outputErrors = new DMatrixRMaj();
+//            DMatrixRMaj hiddenErrors = new DMatrixRMaj();
 
-            SimpleMatrix outputErrors = targetMatrix.minus(finalOutputs);
-            SimpleMatrix hiddenErrors = currentHiddenToOutputsWeights.transpose().mult(outputErrors);
+            DMatrixRMaj hiddenInputs = CommonOps_DDRM.mult(currentInputToHiddenWeights, inputMatrix, null);
+            DMatrixRMaj hiddenOutputs = CommonOps_DDRM.apply(hiddenInputs, activationFunction, null);
+            DMatrixRMaj finalInputs = CommonOps_DDRM.mult(currentHiddenToOutputsWeights, hiddenOutputs, null);
+            DMatrixRMaj finalOutputs = CommonOps_DDRM.apply(finalInputs, activationFunction);
 
-            SimpleMatrix deltaHiddenToOutputs = finalOutputs.elementOp(scalarMinusMatrixOp).elementMult(finalOutputs)
-                    .elementMult(outputErrors).mult(hiddenOutputs.transpose()).scale(learningRate);
+            DMatrixRMaj outputErrors = CommonOps_DDRM.subtract(targetMatrix, finalOutputs, null);
+            DMatrixRMaj hiddenErrors = CommonOps_DDRM.multTransA(currentHiddenToOutputsWeights, outputErrors, null);
 
-            SimpleMatrix deltaInputsToHidden = hiddenOutputs.elementOp(scalarMinusMatrixOp).elementMult(hiddenOutputs)
-                    .elementMult(hiddenErrors).mult(inputMatrix.transpose()).scale(learningRate);
+            DMatrixRMaj deltaHiddenToOutputs = CommonOps_DDRM.multTransB(learningRate,
+                    CommonOps_DDRM.elementMult(outputErrors,
+                            CommonOps_DDRM.elementMult(finalOutputs,
+                                    CommonOps_DDRM.subtract(1, finalOutputs, null), null), null),
+                    hiddenOutputs, null);
+
+
+            DMatrixRMaj deltaInputsToHidden = CommonOps_DDRM.multTransB(learningRate,
+                    CommonOps_DDRM.elementMult(hiddenErrors,
+                            CommonOps_DDRM.elementMult(hiddenOutputs,
+                                    CommonOps_DDRM.subtract(1, hiddenOutputs, null), null), null),
+                    inputMatrix, null);
 
             adjustWeights(
                     currentInputToHiddenWeights,
@@ -116,14 +126,14 @@ public class NeuralNetworkEjml implements INeuralNetwork {
         }
     }
 
-    private void adjustWeights(SimpleMatrix currentInputToHiddenWeights,
-                               SimpleMatrix currentHiddenToOutputsWeights,
-                               SimpleMatrix deltaInputsToHidden,
-                               SimpleMatrix deltaHiddenToOutputs) {
+    private void adjustWeights(DMatrixRMaj currentInputToHiddenWeights,
+                               DMatrixRMaj currentHiddenToOutputsWeights,
+                               DMatrixRMaj deltaInputsToHidden,
+                               DMatrixRMaj deltaHiddenToOutputs) {
         try {
             weightsLock.lock();
-            inputToHiddenWeights = currentInputToHiddenWeights.plus(deltaInputsToHidden);
-            hiddenToOutputsWeights = currentHiddenToOutputsWeights.plus(deltaHiddenToOutputs);
+            inputToHiddenWeights = CommonOps_DDRM.add(currentInputToHiddenWeights, deltaInputsToHidden, null);
+            hiddenToOutputsWeights = CommonOps_DDRM.add(currentHiddenToOutputsWeights, deltaHiddenToOutputs, null);
         } finally {
             weightsLock.unlock();
         }
@@ -139,12 +149,22 @@ public class NeuralNetworkEjml implements INeuralNetwork {
             throw new IllegalArgumentException("Wrong count of inputs");
         }
 
-        SimpleMatrix inputMatrix = new SimpleMatrix(MatrixUtils.transformToMatrix(inputs));
-        SimpleMatrix hiddenInputs = inputToHiddenWeights.mult(inputMatrix);
-        SimpleMatrix hiddenOutputs = hiddenInputs.elementOp(activationFunction);
-        SimpleMatrix finalInputs = hiddenToOutputsWeights.mult(hiddenOutputs);
+        //SimpleMatrix inputMatrix = new SimpleMatrix(MatrixUtils.transformToMatrix(inputs));
+        DMatrixRMaj inputMatrix = new DMatrixRMaj(MatrixUtils.transformToMatrix(inputs));
 
-        return finalInputs.elementOp(activationFunction).toArray2();
+        //SimpleMatrix hiddenInputs = inputToHiddenWeights.mult(inputMatrix);
+        DMatrixRMaj hiddenInputs = new DMatrixRMaj();
+        CommonOps_DDRM.mult(inputToHiddenWeights, inputMatrix, hiddenInputs);
+
+        //SimpleMatrix hiddenOutputs = hiddenInputs.elementOp(activationFunctionOp);
+        DMatrixRMaj hiddenOutputs = new DMatrixRMaj();
+        CommonOps_DDRM.apply(hiddenInputs, activationFunction, hiddenOutputs);
+
+        //SimpleMatrix finalInputs = hiddenToOutputsWeights.mult(hiddenOutputs);
+        DMatrixRMaj finalInputs = new DMatrixRMaj();
+        CommonOps_DDRM.mult(hiddenToOutputsWeights, hiddenOutputs, finalInputs);
+
+        return CommonOps_DDRM.apply(finalInputs, activationFunction).get2DData();
     }
 
     public void setWeightInitStrategy(WeightInitStrategy weightInitStrategy) {

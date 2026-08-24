@@ -90,10 +90,10 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
             INDArray hiddenErrors = currentHiddenToOutputsWeights.transpose().mmul(outputErrors);
 
             INDArray deltaHiddenToOutputs = finalOutputs.rsub(1).mul(finalOutputs)
-                    .mul(outputErrors).mul(hiddenOutputs.transpose()).mul(learningRate);
+                    .mul(outputErrors).mmul(hiddenOutputs.transpose()).mul(learningRate);
 
             INDArray deltaInputsToHidden = hiddenOutputs.rsub(1).mul(hiddenOutputs)
-                    .mul(hiddenErrors).mul(inputMatrix.transpose()).mul(learningRate);
+                    .mul(hiddenErrors).mmul(inputMatrix.transpose()).mul(learningRate);
 
             adjustWeights(
                     currentInputToHiddenWeights,

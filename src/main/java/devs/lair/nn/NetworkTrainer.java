@@ -29,32 +29,24 @@ public class NetworkTrainer {
         NetworkTrainer.out = out;
     }
 
-    public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile) {
-        return trainNetwork(nn, csvFile, 1, 1);
+    public static @NotNull Duration trainNetwork(@NotNull INeuralNetwork nn, @NotNull Path csvFile) {
+        return trainNetwork(nn, csvFile, 1);
     }
 
-    public static Duration trainNetwork(@NotNull NeuralNetwork nn, @NotNull Path csvFile, int epochs) {
-        return trainNetwork(nn, csvFile, epochs, 1);
-    }
-
-    public static Duration trainNetwork(@NotNull NeuralNetwork nn,
-                                        @NotNull Path csvFile,
-                                        int epochs,
-                                        int batchSize) {
-
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+    public static @NotNull Duration trainNetwork(@NotNull INeuralNetwork nn,
+                                                 @NotNull Path csvFile,
+                                                 int epochs) {
         Checker.checkFile(csvFile);
+
         Instant startTime = Instant.now();
         String line;
         int totalRecords = 0;
-
         for (int i = 0; i < epochs; i++) {
             if (out != null) {
                 out.printf("Start epoch %d, start at %s%n", i + 1, new Date());
             }
 
             int epochRecords = 0;
-            List<TrainRecord> batch = new ArrayList<>();
             try (BufferedReader reader = Files.newBufferedReader(csvFile)) {
                 while ((line = reader.readLine()) != null) {
 
@@ -63,25 +55,13 @@ public class NetworkTrainer {
 
                     double[] target = converNumberToTargetArray(Integer.parseInt(split[0]));
                     double[] inputs = convertLineToInputArray(split);
-                    batch.add(new TrainRecord(inputs, target));
-
-                    if (batch.size() == batchSize) {
-                        List<TrainRecord> copy = new ArrayList<>(batch);
-                        executor.execute(() -> nn.train(copy));
-                        batch.clear();
-                    }
-
+                    nn.train(inputs, target);
                     epochRecords++;
 
                     if (epochRecords % 10000 == 0 && out != null) {
                         out.printf("Processed %d records %n", epochRecords);
                     }
                 }
-
-                if (!batch.isEmpty()) {
-                    nn.train(batch);
-                }
-
                 totalRecords += epochRecords;
             } catch (IOException e) {
                 throw new IllegalStateException("Error while reading file: " + csvFile, e);
@@ -89,20 +69,6 @@ public class NetworkTrainer {
             if (out != null) {
                 out.printf("End epoch %d, records processed %d, duration %s ms %n", i + 1,
                         epochRecords, Duration.between(startTime, Instant.now()).toMillis());
-            }
-
-
-            executor.shutdown();
-
-            try {
-                if (executor.awaitTermination(100, TimeUnit.SECONDS)) {
-                    executor.close();
-                } else {
-                    executor.close();
-                }
-            } catch (InterruptedException e) {
-                executor.shutdownNow();
-                executor.close();
             }
         }
 
@@ -116,8 +82,78 @@ public class NetworkTrainer {
         return trainTime;
     }
 
-    public static ValidationReport validateNetwork(@NotNull NeuralNetwork nn,
-                                                   @NotNull Path csvFile) {
+    public static @NotNull Duration trainNetworkAsync(@NotNull INeuralNetwork nn,
+                                                      @NotNull Path csvFile,
+                                                      int epochs,
+                                                      int batchSize) {
+        Checker.checkFile(csvFile);
+
+        Instant startTime = Instant.now();
+        int totalRecords = 0;
+
+        for (int i = 0; i < epochs; i++) {
+            if (out != null) {
+                out.printf("Start epoch %d, start at %s%n", i + 1, new Date());
+            }
+
+            int epochRecords = 0;
+            List<TrainRecord> batch = new ArrayList<>();
+            String line;
+
+            try (BufferedReader reader = Files.newBufferedReader(csvFile);
+                 ExecutorService executor = Executors.newFixedThreadPool(
+                         Runtime.getRuntime().availableProcessors() / 2)) {
+                while ((line = reader.readLine()) != null) {
+
+                    String[] split = line.split(",");
+                    Checker.checkSplit(split);
+
+                    double[] target = converNumberToTargetArray(Integer.parseInt(split[0]));
+                    double[] inputs = convertLineToInputArray(split);
+
+                    batch.add(new TrainRecord(inputs, target));
+                    if (batch.size() == batchSize) {
+                        List<TrainRecord> copy = new ArrayList<>(batch);
+                        executor.execute(() -> nn.train(copy));
+                        batch.clear();
+                    }
+
+                    epochRecords++;
+                }
+
+                if (!batch.isEmpty()) {
+                    nn.train(batch);
+                }
+
+                executor.shutdown();
+                if (!executor.awaitTermination(120, TimeUnit.SECONDS)) {
+                    throw new IllegalStateException("Timeout of execution");
+                }
+
+                totalRecords += epochRecords;
+            } catch (IOException e) {
+                throw new IllegalStateException("Error while reading file: " + csvFile, e);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+
+            if (out != null) {
+                out.printf("End epoch %d, records processed %d, duration %s ms %n", i + 1,
+                        epochRecords, Duration.between(startTime, Instant.now()).toMillis());
+            }
+        }
+
+        Duration trainTime = Duration.between(startTime, Instant.now());
+        if (out != null) {
+            out.printf("Training finished, epochs %d, total records processed %d, duration %s ms %n",
+                    epochs, totalRecords, trainTime.toMillis());
+        }
+
+        return trainTime;
+    }
+
+    public static @NotNull ValidationReport validateNetwork(@NotNull INeuralNetwork nn,
+                                                            @NotNull Path csvFile) {
         Checker.checkFile(csvFile);
 
         Instant startTime = Instant.now();

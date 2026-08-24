@@ -30,7 +30,7 @@ public class NetworkTrainerTest {
     }
 
     @AfterEach
-    void AfterEach() {
+    void afterEach() {
         MatrixUtils.setNoChecks(false);
         NetworkTrainer.setPrintStream(System.out);
     }
@@ -144,7 +144,7 @@ public class NetworkTrainerTest {
         assertThat(performance).isGreaterThan(0.8);
     }
 
-    @RepeatedTest(5)
+    @Test
     @DisplayName("Train 60000 records")
     @Disabled("Long running test")
     @Tag("slow")
@@ -156,7 +156,7 @@ public class NetworkTrainerTest {
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
 
-        Duration duration = NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()), 1, 6000);
+        Duration duration = NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()));
         assertThat(duration).isNotNull();
 
         //validate
@@ -187,7 +187,7 @@ public class NetworkTrainerTest {
     @Disabled("Long running test")
     @Tag("slow")
     public void train60000and5epochs() {
-        //NetworkTrainer.setPrintStream(System.out);
+        NetworkTrainer.setPrintStream(System.out);
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
 
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
@@ -231,5 +231,72 @@ public class NetworkTrainerTest {
 
             Files.write(file.toPath(), incorrectRecords, StandardOpenOption.TRUNCATE_EXISTING);
         }
+    }
+
+    @RepeatedTest(2)
+    @DisplayName("Train 60000 records async")
+    @Disabled("Long running test")
+    @Tag("slow")
+    public void train60000Async() {
+        NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
+        NetworkTrainer.setPrintStream(System.out);
+        MatrixUtils.setNoChecks(true);
+
+        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
+        assertThat(trainFile).isNotNull();
+
+        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 5, 100);
+        assertThat(duration).isNotNull();
+
+        //validate
+        URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
+        assertThat(validateFile).isNotNull();
+        double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
+        assertThat(performance).isGreaterThan(0.9);
+        System.out.println(performance);
+    }
+
+    @Test
+    @DisplayName("Train 10000 records on nd4j network")
+    @Disabled("Long running test")
+    @Tag("slow")
+    public void train10000recordsNd4j() {
+        NeuralNetworkNd4j nn = new NeuralNetworkNd4j(784, 200, 10, 0.1);
+
+        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
+        assertThat(trainFile).isNotNull();
+
+        Duration duration = NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()));
+        assertThat(duration).isNotNull();
+
+        //validate
+        URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test_10.csv");
+        assertThat(validateFile).isNotNull();
+        double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
+        assertThat(performance).isGreaterThan(0.8);
+        System.out.println(performance);
+    }
+
+    @RepeatedTest(2)
+    @DisplayName("Train 60000 records async on nd4j network")
+    @Disabled("Long running test")
+    @Tag("slow")
+    public void train60000AsyncND4J() {
+        NeuralNetworkNd4j nn = new NeuralNetworkNd4j(784, 200, 10, 0.1);
+        NetworkTrainer.setPrintStream(System.out);
+        MatrixUtils.setNoChecks(true);
+
+        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
+        assertThat(trainFile).isNotNull();
+
+        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 2, 100);
+        assertThat(duration).isNotNull();
+
+        //validate
+        URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
+        assertThat(validateFile).isNotNull();
+        double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
+        assertThat(performance).isGreaterThan(0.9);
+        System.out.println(performance);
     }
 }

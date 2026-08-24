@@ -83,7 +83,7 @@ public class MatrixUtils {
     }
 
     public static double[][] subtract(double scalar, double[][] matrix) {
-                return withScalar(matrix, scalar, Operation.SUBTRACT_FROM_SCALAR);
+        return withScalar(matrix, scalar, Operation.SUBTRACT_FROM_SCALAR);
     }
 
     public static double[][] subtract(double[][] matrix, double scalar) {
@@ -122,9 +122,8 @@ public class MatrixUtils {
                     case SUBTRACT -> ma[i][j] - mb[i][j];
                     case MULTIPLY -> ma[i][j] * mb[i][j];
                     case DIVIDE -> ma[i][j] / mb[i][j];
-                    case SUBTRACT_FROM_SCALAR ->
-                            throw new UnsupportedOperationException(
-                                    "This operation work only with scalar");
+                    case SUBTRACT_FROM_SCALAR -> throw new UnsupportedOperationException(
+                            "This operation work only with scalar");
                 };
             }
         }
@@ -180,7 +179,7 @@ public class MatrixUtils {
                 }
             }
         }
-        return new double[] {min, max};
+        return new double[]{min, max};
     }
 
     public static String toString(double[][] matrix) {
@@ -230,12 +229,12 @@ public class MatrixUtils {
 
         int constantLength = -1;
         for (int i = 0; i < m.length; i++) {
-            if (constantLength == - 1) {
+            if (constantLength == -1) {
                 constantLength = m[i].length;
                 continue;
             }
 
-            if (constantLength != m[i].length ) {
+            if (constantLength != m[i].length) {
                 throw new IllegalArgumentException(
                         "Martix has an inconstant size, wrong row with index = %d".formatted(i));
             }
@@ -261,6 +260,14 @@ public class MatrixUtils {
 
         checkConstantLength(ma);
         checkConstantLength(mb);
+    }
+
+    public static double[][] copyMatrix(double[][] matrix) {
+        double[][] result = new double[matrix.length][matrix[0].length];
+        for (int i = 0; i < matrix.length; i++) {
+            result[i] = matrix[i].clone();
+        }
+        return result;
     }
 
     public enum Operation {

@@ -12,9 +12,31 @@
         <maven.compiler.source>21</maven.compiler.source>
         <maven.compiler.target>21</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <dl4j.version>1.0.0-M2.1</dl4j.version>
     </properties>
 
     <dependencies>
+        <!-- ND4J API -->
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-api</artifactId>
+            <version>${dl4j.version}</version>
+        </dependency>
+
+        <!-- CPU backend -->
+        <dependency>
+            <groupId>org.nd4j</groupId>
+            <artifactId>nd4j-native-platform</artifactId>
+            <version>${dl4j.version}</version>
+        </dependency>
+
+        <!-- EJML -->
+        <dependency>
+            <groupId>org.ejml</groupId>
+            <artifactId>ejml-all</artifactId>
+            <version>0.46.1</version>
+            <scope>compile</scope>
+        </dependency>
 
         <dependency>
             <groupId>com.formdev</groupId>

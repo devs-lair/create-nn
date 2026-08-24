@@ -245,7 +245,7 @@ public class NetworkTrainerTest {
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
 
-        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 1, 100);
+        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 1, 1000);
         assertThat(duration).isNotNull();
 
         //validate
@@ -289,7 +289,7 @@ public class NetworkTrainerTest {
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
 
-        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 2, 100);
+        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 2, 1000);
         assertThat(duration).isNotNull();
 
         //validate
@@ -352,7 +352,7 @@ public class NetworkTrainerTest {
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
 
-        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 1, 100);
+        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 1, 1000);
         assertThat(duration).isNotNull();
 
         //validate

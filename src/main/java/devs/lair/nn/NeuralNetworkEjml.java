@@ -2,7 +2,6 @@ package devs.lair.nn;
 
 import devs.lair.nn.util.Checker;
 import org.apache.commons.math3.util.FastMath;
-import org.ejml.data.DMatrixD1;
 import org.ejml.data.DMatrixRMaj;
 import org.ejml.dense.row.CommonOps_DDRM;
 import org.ejml.dense.row.RandomMatrices_DDRM;
@@ -12,20 +11,16 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Random;
-import java.util.concurrent.locks.ReentrantLock;
 
 public class NeuralNetworkEjml implements INeuralNetwork {
+    private final static DOperatorUnary activationFunction = (double v) -> 1 / (1 + FastMath.exp(-v));
 
     private final int inputNodesNumber;
     private final int hiddenNodesNumber;
     private final int outputNodesNumber;
     private final double learningRate;
 
-    private final DOperatorUnary activationFunction = (double v) -> 1 / (1 + FastMath.exp(-v));
-    private final ReentrantLock weightsLock = new ReentrantLock();
-
-    private DMatrixRMaj inputToHiddenWeights;
-    private DMatrixRMaj hiddenToOutputsWeights;
+    private volatile DMatrixRMaj[] weights = new DMatrixRMaj[2];
     private WeightInitStrategy weightInitStrategy = WeightInitStrategy.RANDOM_GAUSSIAN;
 
     public NeuralNetworkEjml(int inputNodesNumber,
@@ -44,8 +39,8 @@ public class NeuralNetworkEjml implements INeuralNetwork {
     }
 
     private void initWeights() {
-        inputToHiddenWeights = initWeightsMatrix(hiddenNodesNumber, inputNodesNumber);
-        hiddenToOutputsWeights = initWeightsMatrix(outputNodesNumber, hiddenNodesNumber);
+        weights[0] = initWeightsMatrix(hiddenNodesNumber, inputNodesNumber);
+        weights[1] = initWeightsMatrix(outputNodesNumber, hiddenNodesNumber);
     }
 
     private DMatrixRMaj initWeightsMatrix(int rows, int columns) {
@@ -70,8 +65,7 @@ public class NeuralNetworkEjml implements INeuralNetwork {
         DMatrixRMaj deltaInputsToHidden = new DMatrixRMaj();
         DMatrixRMaj inputMatrix = new DMatrixRMaj();
         DMatrixRMaj targetMatrix = new DMatrixRMaj();
-        DMatrixRMaj currentInputToHiddenWeights;
-        DMatrixRMaj currentHiddenToOutputsWeights;
+        DMatrixRMaj[] currentWeight;
 
         for (TrainRecord trainRecord : batch) {
             double[] inputs = trainRecord.inputs();
@@ -88,22 +82,16 @@ public class NeuralNetworkEjml implements INeuralNetwork {
             inputMatrix.set(inputs.length, 1, true, inputs);
             targetMatrix.set(targets.length, 1, true, targets);
 
-            try {
-                weightsLock.lock();
-                currentInputToHiddenWeights = inputToHiddenWeights;
-                currentHiddenToOutputsWeights = hiddenToOutputsWeights;
-            } finally {
-                weightsLock.unlock();
-            }
+            currentWeight = weights;
 
-            CommonOps_DDRM.apply(CommonOps_DDRM.mult(currentInputToHiddenWeights, inputMatrix, null),
+            CommonOps_DDRM.apply(CommonOps_DDRM.mult(currentWeight[0], inputMatrix, null),
                     activationFunction, hiddenOutputs);
 
-            CommonOps_DDRM.apply(CommonOps_DDRM.mult(currentHiddenToOutputsWeights, hiddenOutputs, null),
+            CommonOps_DDRM.apply(CommonOps_DDRM.mult(currentWeight[1], hiddenOutputs, null),
                     activationFunction, finalOutputs);
 
             CommonOps_DDRM.subtract(targetMatrix, finalOutputs, outputErrors);
-            CommonOps_DDRM.multTransA(currentHiddenToOutputsWeights, outputErrors, hiddenErrors);
+            CommonOps_DDRM.multTransA(currentWeight[1], outputErrors, hiddenErrors);
 
             CommonOps_DDRM.multTransB(learningRate,
                     CommonOps_DDRM.elementMult(outputErrors,
@@ -118,8 +106,8 @@ public class NeuralNetworkEjml implements INeuralNetwork {
                     inputMatrix, deltaInputsToHidden);
 
             adjustWeights(
-                    currentInputToHiddenWeights,
-                    currentHiddenToOutputsWeights,
+                    currentWeight[0],
+                    currentWeight[1],
                     deltaInputsToHidden,
                     deltaHiddenToOutputs);
         }
@@ -129,13 +117,12 @@ public class NeuralNetworkEjml implements INeuralNetwork {
                                DMatrixRMaj currentHiddenToOutputsWeights,
                                DMatrixRMaj deltaInputsToHidden,
                                DMatrixRMaj deltaHiddenToOutputs) {
-        try {
-            weightsLock.lock();
-            inputToHiddenWeights = CommonOps_DDRM.add(currentInputToHiddenWeights, deltaInputsToHidden, null);
-            hiddenToOutputsWeights = CommonOps_DDRM.add(currentHiddenToOutputsWeights, deltaHiddenToOutputs, null);
-        } finally {
-            weightsLock.unlock();
-        }
+
+        DMatrixRMaj[] newWeights = new DMatrixRMaj[weights.length];
+        newWeights[0] = CommonOps_DDRM.add(currentInputToHiddenWeights, deltaInputsToHidden, null);
+        newWeights[1] = CommonOps_DDRM.add(currentHiddenToOutputsWeights, deltaHiddenToOutputs, null);
+
+        weights = newWeights;
     }
 
     public void train(double[] inputs, double[] targets) {
@@ -149,9 +136,9 @@ public class NeuralNetworkEjml implements INeuralNetwork {
         }
 
         DMatrixRMaj inputMatrix = new DMatrixRMaj(MatrixUtils.transformToMatrix(inputs));
-        DMatrixRMaj hiddenInputs = CommonOps_DDRM.mult(inputToHiddenWeights, inputMatrix, null);
+        DMatrixRMaj hiddenInputs = CommonOps_DDRM.mult(weights[0], inputMatrix, null);
         DMatrixRMaj hiddenOutputs = CommonOps_DDRM.apply(hiddenInputs, activationFunction, null);
-        DMatrixRMaj finalInputs = CommonOps_DDRM.mult(hiddenToOutputsWeights, hiddenOutputs, null);
+        DMatrixRMaj finalInputs = CommonOps_DDRM.mult(weights[1], hiddenOutputs, null);
 
         return CommonOps_DDRM.apply(finalInputs, activationFunction).get2DData();
     }
@@ -159,24 +146,5 @@ public class NeuralNetworkEjml implements INeuralNetwork {
     public void setWeightInitStrategy(WeightInitStrategy weightInitStrategy) {
         this.weightInitStrategy = weightInitStrategy;
         initWeights();
-    }
-
-    private <T extends DMatrixD1> T elementMult(T... m) {
-        T A = m[0];
-
-        DMatrixRMaj output = new DMatrixRMaj(A.numRows, A.numCols);
-        int length = A.getNumElements();
-
-
-        for (int i = 0; i < length; i++) {
-            double cell = 1;
-            for (T matrix : m) {
-                cell *= matrix.get(i);
-            }
-
-            output.set(i, cell);
-        }
-
-        return (T) output;
     }
 }

@@ -102,7 +102,7 @@ public class NetworkTrainer {
 
             try (BufferedReader reader = Files.newBufferedReader(csvFile);
                  ExecutorService executor = Executors.newFixedThreadPool(
-                         Runtime.getRuntime().availableProcessors() / 2)) {
+                         Runtime.getRuntime().availableProcessors() - 4)) {
                 while ((line = reader.readLine()) != null) {
 
                     String[] split = line.split(",");

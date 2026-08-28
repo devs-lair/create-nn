@@ -2,10 +2,12 @@ package devs.lair.nn;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.function.DoubleFunction;
 
 public class MatrixUtils {
     private static boolean noChecks = false;
+    private static boolean useParallelism = true;
 
     private MatrixUtils() {
         throw new UnsupportedOperationException();
@@ -13,6 +15,10 @@ public class MatrixUtils {
 
     public static void setNoChecks(boolean noChecks) {
         MatrixUtils.noChecks = noChecks;
+    }
+
+    public static void setUseParallelism(boolean useParallelism) {
+        MatrixUtils.useParallelism = useParallelism;
     }
 
     public static double[][] transpose(double[][] matrix) {
@@ -44,6 +50,10 @@ public class MatrixUtils {
     public static double[][] multiply(double[][] ma, double[][] mb) {
         checkMultiplyMatrixCompatible(ma, mb);
 
+        if (useParallelism && (ma.length > 1000 || mb.length > 1000)) {
+            return multiplyInParallel(ma, mb);
+        }
+
         double[][] result = new double[ma.length][mb[0].length];
         for (int i = 0; i < result.length; i++) {
             for (int j = 0; j < result[i].length; j++) {
@@ -56,6 +66,23 @@ public class MatrixUtils {
         }
 
         return result;
+    }
+
+    public static double[][] multiplyInParallel(double[][] ma, double[][] mb) {
+        double[][] result = new double[ma.length][mb[0].length];
+        Arrays.parallelSetAll(result, arrayRowIndex -> multiplyRow(ma, mb, arrayRowIndex));
+        return result;
+    }
+
+    private static double[] multiplyRow(double[][] ma, double[][] mb, int row) {
+        double[] resultRow = new double[mb[0].length];
+
+        for (int j = 0; j < mb[0].length; j++) {
+            for (int k = 0; k < ma[0].length; k++) {
+                resultRow[j] += ma[row][k] * mb[k][j];
+            }
+        }
+        return resultRow;
     }
 
     public static double[][] multiply(double[][] matrix, double scalar) {

@@ -11,6 +11,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.locks.ReentrantLock;
 
 public class NeuralNetworkEjml implements INeuralNetwork {
     private final static DOperatorUnary activationFunction = (double v) -> 1 / (1 + FastMath.exp(-v));
@@ -20,7 +21,8 @@ public class NeuralNetworkEjml implements INeuralNetwork {
     private final int outputNodesNumber;
     private final double learningRate;
 
-    private volatile DMatrixRMaj[] weights = new DMatrixRMaj[2];
+    private final ReentrantLock lock = new ReentrantLock();
+    private final DMatrixRMaj[] weights = new DMatrixRMaj[2];
     private WeightInitStrategy weightInitStrategy = WeightInitStrategy.RANDOM_GAUSSIAN;
 
     public NeuralNetworkEjml(int inputNodesNumber,
@@ -106,23 +108,15 @@ public class NeuralNetworkEjml implements INeuralNetwork {
                     inputMatrix, deltaInputsToHidden);
 
             adjustWeights(
-                    currentWeight[0],
-                    currentWeight[1],
                     deltaInputsToHidden,
                     deltaHiddenToOutputs);
         }
     }
 
-    private void adjustWeights(DMatrixRMaj currentInputToHiddenWeights,
-                               DMatrixRMaj currentHiddenToOutputsWeights,
-                               DMatrixRMaj deltaInputsToHidden,
+    private void adjustWeights(DMatrixRMaj deltaInputsToHidden,
                                DMatrixRMaj deltaHiddenToOutputs) {
-
-        DMatrixRMaj[] newWeights = new DMatrixRMaj[weights.length];
-        newWeights[0] = CommonOps_DDRM.add(currentInputToHiddenWeights, deltaInputsToHidden, null);
-        newWeights[1] = CommonOps_DDRM.add(currentHiddenToOutputsWeights, deltaHiddenToOutputs, null);
-
-        weights = newWeights;
+        CommonOps_DDRM.addEquals(weights[0], deltaInputsToHidden);
+        CommonOps_DDRM.addEquals(weights[1], deltaHiddenToOutputs);
     }
 
     public void train(double[] inputs, double[] targets) {

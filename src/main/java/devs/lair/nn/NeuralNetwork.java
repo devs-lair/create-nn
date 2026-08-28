@@ -100,22 +100,16 @@ public class NeuralNetwork implements INeuralNetwork {
                             MatrixUtils.transpose(inputMatrix)),
                     learningRate);
 
-            adjustWeights(
-                    currentInputToHiddenWeights,
-                    currentHiddenToOutputsWeights,
-                    deltaInputsToHidden,
-                    deltaHiddenToOutputs);
+            adjustWeights(deltaInputsToHidden, deltaHiddenToOutputs);
         }
     }
 
-    private void adjustWeights(double[][] currentInputToHiddenWeights,
-                               double[][] currentHiddenToOutputsWeights,
-                               double[][] deltaInputsToHidden,
+    private void adjustWeights(double[][] deltaInputsToHidden,
                                double[][] deltaHiddenToOutputs) {
         try {
             weightsLock.lock();
-            inputToHiddenWeights = MatrixUtils.add(currentInputToHiddenWeights, deltaInputsToHidden);
-            hiddenToOutputsWeights = MatrixUtils.add(currentHiddenToOutputsWeights, deltaHiddenToOutputs);
+            inputToHiddenWeights = MatrixUtils.add(inputToHiddenWeights, deltaInputsToHidden);
+            hiddenToOutputsWeights = MatrixUtils.add(hiddenToOutputsWeights, deltaHiddenToOutputs);
         } finally {
             weightsLock.unlock();
         }

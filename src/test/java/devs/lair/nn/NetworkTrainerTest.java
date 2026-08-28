@@ -152,6 +152,7 @@ public class NetworkTrainerTest {
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
         NetworkTrainer.setPrintStream(null);
         MatrixUtils.setNoChecks(true);
+        MatrixUtils.setUseParallelism(true);
 
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
@@ -233,7 +234,7 @@ public class NetworkTrainerTest {
         }
     }
 
-    @RepeatedTest(2)
+    @RepeatedTest(1)
     @DisplayName("Train 60000 records async")
     @Disabled("Long running test")
     @Tag("slow")
@@ -342,7 +343,7 @@ public class NetworkTrainerTest {
         System.out.println(performance);
     }
 
-    @RepeatedTest(2)
+    @RepeatedTest(5)
     @DisplayName("Train 60000 records on emjl network async")
     @Disabled("Long running test")
     @Tag("slow")

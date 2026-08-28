@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.function.DoubleFunction;
 
 import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -155,6 +156,22 @@ class MatrixUtilsTest {
         assertThat(applied[0][1]).isEqualTo(4);
         assertThat(applied[1][0]).isEqualTo(6);
         assertThat(applied[1][1]).isEqualTo(6);
+    }
+
+    @Test
+    @DisplayName("Apply sigmoid to matrix")
+    void applyFunctionSigmoid() {
+        double[][] matrix = new double[][]{{1, 1}, {2, 2}};
+
+        DoubleFunction<Double> sigmoid
+                = (double x) -> 1 / (1 + Math.exp(-x));
+
+        double[][] applied = MatrixUtils.applyFunction(matrix, sigmoid);
+        assertThat(applied).hasDimensions(2, 2);
+        assertThat(applied[0][0]).isCloseTo(0.7310585786300049, within(0.0001));
+        assertThat(applied[0][1]).isCloseTo(0.7310585786300049, within(0.0001));
+        assertThat(applied[1][0]).isCloseTo(0.8807970779778823, within(0.0001));
+        assertThat(applied[1][1]).isCloseTo(0.8807970779778823, within(0.0001));
     }
 
     @Test

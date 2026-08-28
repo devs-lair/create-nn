@@ -2,10 +2,12 @@ package devs.lair.nn;
 
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Arrays;
 import java.util.function.DoubleFunction;
 
 public class MatrixUtils {
     private static boolean noChecks = false;
+    private static boolean useParallelism = true;
 
     private MatrixUtils() {
         throw new UnsupportedOperationException();
@@ -13,6 +15,10 @@ public class MatrixUtils {
 
     public static void setNoChecks(boolean noChecks) {
         MatrixUtils.noChecks = noChecks;
+    }
+
+    public static void setUseParallelism(boolean useParallelism) {
+        MatrixUtils.useParallelism = useParallelism;
     }
 
     public static double[][] transpose(double[][] matrix) {
@@ -44,6 +50,10 @@ public class MatrixUtils {
     public static double[][] multiply(double[][] ma, double[][] mb) {
         checkMultiplyMatrixCompatible(ma, mb);
 
+        if (useParallelism && (ma.length > 1000 || mb.length > 1000)) {
+            return multiplyInParallel(ma, mb);
+        }
+
         double[][] result = new double[ma.length][mb[0].length];
         for (int i = 0; i < result.length; i++) {
             for (int j = 0; j < result[i].length; j++) {
@@ -56,6 +66,23 @@ public class MatrixUtils {
         }
 
         return result;
+    }
+
+    public static double[][] multiplyInParallel(double[][] ma, double[][] mb) {
+        double[][] result = new double[ma.length][mb[0].length];
+        Arrays.parallelSetAll(result, arrayRowIndex -> multiplyRow(ma, mb, arrayRowIndex));
+        return result;
+    }
+
+    private static double[] multiplyRow(double[][] ma, double[][] mb, int row) {
+        double[] resultRow = new double[mb[0].length];
+
+        for (int j = 0; j < mb[0].length; j++) {
+            for (int k = 0; k < ma[0].length; k++) {
+                resultRow[j] += ma[row][k] * mb[k][j];
+            }
+        }
+        return resultRow;
     }
 
     public static double[][] multiply(double[][] matrix, double scalar) {
@@ -83,7 +110,7 @@ public class MatrixUtils {
     }
 
     public static double[][] subtract(double scalar, double[][] matrix) {
-                return withScalar(matrix, scalar, Operation.SUBTRACT_FROM_SCALAR);
+        return withScalar(matrix, scalar, Operation.SUBTRACT_FROM_SCALAR);
     }
 
     public static double[][] subtract(double[][] matrix, double scalar) {
@@ -122,9 +149,8 @@ public class MatrixUtils {
                     case SUBTRACT -> ma[i][j] - mb[i][j];
                     case MULTIPLY -> ma[i][j] * mb[i][j];
                     case DIVIDE -> ma[i][j] / mb[i][j];
-                    case SUBTRACT_FROM_SCALAR ->
-                            throw new UnsupportedOperationException(
-                                    "This operation work only with scalar");
+                    case SUBTRACT_FROM_SCALAR -> throw new UnsupportedOperationException(
+                            "This operation work only with scalar");
                 };
             }
         }
@@ -180,7 +206,7 @@ public class MatrixUtils {
                 }
             }
         }
-        return new double[] {min, max};
+        return new double[]{min, max};
     }
 
     public static String toString(double[][] matrix) {
@@ -230,12 +256,12 @@ public class MatrixUtils {
 
         int constantLength = -1;
         for (int i = 0; i < m.length; i++) {
-            if (constantLength == - 1) {
+            if (constantLength == -1) {
                 constantLength = m[i].length;
                 continue;
             }
 
-            if (constantLength != m[i].length ) {
+            if (constantLength != m[i].length) {
                 throw new IllegalArgumentException(
                         "Martix has an inconstant size, wrong row with index = %d".formatted(i));
             }
@@ -261,6 +287,14 @@ public class MatrixUtils {
 
         checkConstantLength(ma);
         checkConstantLength(mb);
+    }
+
+    public static double[][] copyMatrix(double[][] matrix) {
+        double[][] result = new double[matrix.length][matrix[0].length];
+        for (int i = 0; i < matrix.length; i++) {
+            result[i] = matrix[i].clone();
+        }
+        return result;
     }
 
     public enum Operation {

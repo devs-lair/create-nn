@@ -12,14 +12,14 @@ public class ValidationReport {
     private final List<String> incorrectRecords;
     private final Duration duration;
     private final Path filePath;
-    private final NeuralNetwork neuralNetwork;
+    private final INeuralNetwork neuralNetwork;
 
     public ValidationReport(int totalCountRecords,
                             int totalCountCorrect,
                             @NotNull List<String> wrongRecords,
                             @NotNull Duration duration,
                             @NotNull Path filePath,
-                            @NotNull NeuralNetwork neuralNetwork) {
+                            @NotNull INeuralNetwork neuralNetwork) {
 
         this.totalRecordsCount = totalCountRecords;
         this.totalCorrectCount = totalCountCorrect;
@@ -49,7 +49,7 @@ public class ValidationReport {
         return filePath;
     }
 
-    public NeuralNetwork getNeuralNetwork() {
+    public INeuralNetwork getNeuralNetwork() {
         return neuralNetwork;
     }
 

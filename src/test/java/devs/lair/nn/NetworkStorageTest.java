@@ -35,11 +35,11 @@ public class NetworkStorageTest {
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
 
         //train
-        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train_100.csv");
+        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
         NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()), 5);
 
-        File file = NetworkStorage.saveToFile(nn, Paths.get("nn-train-100.csv"));
+        File file = NetworkStorage.saveToFile(nn, Paths.get("nn-test.csv"));
         assertThat(file).isNotEmpty();
     }
 

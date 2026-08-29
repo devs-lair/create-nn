@@ -3,6 +3,7 @@ package devs.lair.nn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
+import java.util.concurrent.RecursiveAction;
 import java.util.function.DoubleFunction;
 
 public class MatrixUtils {
@@ -71,6 +72,13 @@ public class MatrixUtils {
     public static double[][] multiplyInParallel(double[][] ma, double[][] mb) {
         double[][] result = new double[ma.length][mb[0].length];
         Arrays.parallelSetAll(result, arrayRowIndex -> multiplyRow(ma, mb, arrayRowIndex));
+        return result;
+    }
+
+    public static double[][] multiplyInParallelWithFJP(double[][] ma, double[][] mb) {
+        double[][] result = new double[ma.length][mb[0].length];
+        MatrixMultiplyTask task = new MatrixMultiplyTask(ma, mb, result);
+        task.invoke();
         return result;
     }
 
@@ -299,5 +307,44 @@ public class MatrixUtils {
 
     public enum Operation {
         ADD, SUBTRACT, MULTIPLY, DIVIDE, SUBTRACT_FROM_SCALAR
+    }
+
+    private static class MatrixMultiplyTask extends RecursiveAction {
+        private final static int THRESHOLD = 400;
+
+        private final double[][] ma, mb, result;
+        private final int startRow, endRow;
+
+        public MatrixMultiplyTask(double[][] ma, double[][] mb, double[][] result) {
+            this.ma = ma;
+            this.mb = mb;
+            this.result = result;
+            this.startRow = 0;
+            this.endRow = ma.length;
+        }
+
+        public MatrixMultiplyTask(double[][] ma, double[][] mb, double[][] result,
+                                  int startRow, int endRow) {
+            this.ma = ma;
+            this.mb = mb;
+            this.result = result;
+            this.startRow = startRow;
+            this.endRow = endRow;
+        }
+
+        @Override
+        protected void compute() {
+            int rowCount = endRow - startRow;
+            if (rowCount <= THRESHOLD) {
+                for (int i = startRow; i < endRow; i++) {
+                    result[i] = multiplyRow(ma, mb, i);
+                }
+            } else {
+                int mid = startRow + rowCount / 2;
+                MatrixMultiplyTask t1 = new MatrixMultiplyTask(ma, mb, result, startRow, mid);
+                MatrixMultiplyTask t2 = new MatrixMultiplyTask(ma, mb, result, mid, endRow);
+                invokeAll(t1, t2);
+            }
+        }
     }
 }

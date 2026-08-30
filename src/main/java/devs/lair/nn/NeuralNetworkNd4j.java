@@ -49,7 +49,7 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
             case ONES -> Nd4j.ones(DataType.DOUBLE, rows, columns);
             case ZEROS -> Nd4j.zeros(DataType.DOUBLE, rows, columns);
             case RANDOM_GAUSSIAN -> Nd4j.rand(new NormalDistribution(0,
-                    Math.pow(rows, -0.5)), rows, columns).castTo(DataType.DOUBLE).detach();
+                    Math.pow(rows, -0.5)), rows, columns).castTo(DataType.DOUBLE);
         };
     }
 
@@ -95,37 +95,30 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
             INDArray deltaInputsToHidden = hiddenOutputs.rsub(1).mul(hiddenOutputs)
                     .mul(hiddenErrors).mmul(inputMatrix.transpose()).mul(learningRate);
 
-            adjustWeights(
-                    currentInputToHiddenWeights,
-                    currentHiddenToOutputsWeights,
-                    deltaInputsToHidden,
-                    deltaHiddenToOutputs);
+            adjustWeights(deltaInputsToHidden, deltaHiddenToOutputs);
 
-//            inputMatrix.close();
-//            targetMatrix.close();
-//            hiddenInputs.close();
-//            hiddenOutputs.close();
-//            finalInputs.close();
-//            finalOutputs.close();
-//            outputErrors.close();
-//            hiddenErrors.close();
-
+            inputMatrix.close();
+            targetMatrix.close();
+            hiddenInputs.close();
+            hiddenOutputs.close();
+            finalInputs.close();
+            finalOutputs.close();
+            outputErrors.close();
+            hiddenErrors.close();
+            currentHiddenToOutputsWeights.close();
+            currentInputToHiddenWeights.close();
         }
     }
 
-    private void adjustWeights(INDArray currentInputToHiddenWeights,
-                               INDArray currentHiddenToOutputsWeights,
-                               INDArray deltaInputsToHidden,
-                               INDArray deltaHiddenToOutputs) {
+    private void adjustWeights(INDArray deltaInputsToHidden, INDArray deltaHiddenToOutputs) {
         try {
             weightsLock.lock();
-            inputToHiddenWeights = currentInputToHiddenWeights.add(deltaInputsToHidden);
-            hiddenToOutputsWeights = currentHiddenToOutputsWeights.add(deltaHiddenToOutputs);
+            inputToHiddenWeights = inputToHiddenWeights.add(deltaInputsToHidden);
+            hiddenToOutputsWeights = hiddenToOutputsWeights.add(deltaHiddenToOutputs);
 
-//            currentInputToHiddenWeights.close();
-//            currentHiddenToOutputsWeights.close();
-//            deltaInputsToHidden.close();
-//            deltaHiddenToOutputs.close();
+            deltaInputsToHidden.close();
+            deltaHiddenToOutputs.close();
+
         } finally {
             weightsLock.unlock();
         }

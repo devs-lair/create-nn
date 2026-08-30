@@ -75,13 +75,6 @@ public class MatrixUtils {
         return result;
     }
 
-    public static double[][] multiplyInParallelWithFJP(double[][] ma, double[][] mb) {
-        double[][] result = new double[ma.length][mb[0].length];
-        MatrixMultiplyTask task = new MatrixMultiplyTask(ma, mb, result);
-        task.invoke();
-        return result;
-    }
-
     private static double[] multiplyRow(double[][] ma, double[][] mb, int row) {
         double[] resultRow = new double[mb[0].length];
 
@@ -91,6 +84,13 @@ public class MatrixUtils {
             }
         }
         return resultRow;
+    }
+
+    public static double[][] multiplyInParallelWithFJP(double[][] ma, double[][] mb) {
+        double[][] result = new double[ma.length][mb[0].length];
+        MatrixMultiplyTask task = new MatrixMultiplyTask(ma, mb, result);
+        task.invoke();
+        return result;
     }
 
     public static double[][] multiply(double[][] matrix, double scalar) {
@@ -310,7 +310,7 @@ public class MatrixUtils {
     }
 
     private static class MatrixMultiplyTask extends RecursiveAction {
-        private final static int THRESHOLD = 400;
+        private final static int THRESHOLD = 100;
 
         private final double[][] ma, mb, result;
         private final int startRow, endRow;

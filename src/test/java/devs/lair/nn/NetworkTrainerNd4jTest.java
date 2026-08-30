@@ -44,21 +44,21 @@ public class NetworkTrainerNd4jTest {
         System.out.println(performance);
     }
 
-    @Test
+    @RepeatedTest(1)
     @DisplayName("Train 60000 records on nd4j network")
     @Disabled("Long running test")
     @Tag("slow")
     public void train60000recordsNd4j() {
         NeuralNetworkNd4j nn = new NeuralNetworkNd4j(784, 200, 10, 0.1);
 
-        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
+        URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
 
         Duration duration = NetworkTrainer.trainNetwork(nn, Paths.get(trainFile.getFile()));
         assertThat(duration).isNotNull();
 
         //validate
-        URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test_10.csv");
+        URL validateFile = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
         assertThat(validateFile).isNotNull();
         double performance = NetworkTrainer.validateNetwork(nn, Paths.get(validateFile.getFile())).getPerformance();
         assertThat(performance).isGreaterThan(0.8);
@@ -78,7 +78,7 @@ public class NetworkTrainerNd4jTest {
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
         assertThat(trainFile).isNotNull();
 
-        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 2, 1000);
+        Duration duration = NetworkTrainer.trainNetworkAsync(nn, Paths.get(trainFile.getFile()), 1, 1000);
         assertThat(duration).isNotNull();
 
         //validate

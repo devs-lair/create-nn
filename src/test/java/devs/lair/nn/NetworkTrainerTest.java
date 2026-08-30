@@ -234,13 +234,13 @@ public class NetworkTrainerTest {
         }
     }
 
-    @RepeatedTest(1)
+    @RepeatedTest(5)
     @DisplayName("Train 60000 records async")
     @Disabled("Long running test")
     @Tag("slow")
     public void train60000Async() {
         NeuralNetwork nn = new NeuralNetwork(784, 200, 10, 0.1);
-        NetworkTrainer.setPrintStream(System.out);
+        //NetworkTrainer.setPrintStream(System.out);
         MatrixUtils.setNoChecks(true);
 
         URL trainFile = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");

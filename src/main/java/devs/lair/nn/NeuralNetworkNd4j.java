@@ -55,6 +55,16 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
 
     @Override
     public void train(@NotNull List<TrainRecord> batch) {
+        INDArray inputMatrix = null;
+        INDArray targetMatrix = null;
+        INDArray hiddenInputs = null;
+        INDArray hiddenOutputs = null;
+        INDArray finalOutputs = null;
+        INDArray outputErrors = null;
+        INDArray hiddenErrors = null;
+        INDArray currentHiddenToOutputsWeights = null;
+        INDArray currentInputToHiddenWeights = null;
+
         for (TrainRecord trainRecord : batch) {
             double[] inputs = trainRecord.inputs();
             double[] targets = trainRecord.targets();
@@ -67,11 +77,8 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
                 throw new IllegalArgumentException("Wrong count of outputs");
             }
 
-            INDArray inputMatrix = Nd4j.create(MatrixUtils.transformToMatrix(inputs));
-            INDArray targetMatrix = Nd4j.create(MatrixUtils.transformToMatrix(targets));
-
-            INDArray currentInputToHiddenWeights;
-            INDArray currentHiddenToOutputsWeights;
+            inputMatrix = Nd4j.create(MatrixUtils.transformToMatrix(inputs));
+            targetMatrix = Nd4j.create(MatrixUtils.transformToMatrix(targets));
 
             try {
                 weightsLock.lock();
@@ -81,13 +88,11 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
                 weightsLock.unlock();
             }
 
-            INDArray hiddenInputs = currentInputToHiddenWeights.mmul(inputMatrix);
-            INDArray hiddenOutputs = Transforms.sigmoid(hiddenInputs);
-            INDArray finalInputs = currentHiddenToOutputsWeights.mmul(hiddenOutputs);
-            INDArray finalOutputs = Transforms.sigmoid(finalInputs);
-
-            INDArray outputErrors = targetMatrix.sub(finalOutputs);
-            INDArray hiddenErrors = currentHiddenToOutputsWeights.transpose().mmul(outputErrors);
+            hiddenInputs = currentInputToHiddenWeights.mmul(inputMatrix);
+            hiddenOutputs = Transforms.sigmoid(hiddenInputs);
+            finalOutputs = Transforms.sigmoid(currentHiddenToOutputsWeights.mmul(hiddenOutputs));
+            outputErrors = targetMatrix.sub(finalOutputs);
+            hiddenErrors = currentHiddenToOutputsWeights.transpose().mmul(outputErrors);
 
             INDArray deltaHiddenToOutputs = finalOutputs.rsub(1).mul(finalOutputs)
                     .mul(outputErrors).mmul(hiddenOutputs.transpose()).mul(learningRate);
@@ -96,18 +101,17 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
                     .mul(hiddenErrors).mmul(inputMatrix.transpose()).mul(learningRate);
 
             adjustWeights(deltaInputsToHidden, deltaHiddenToOutputs);
-
-            inputMatrix.close();
-            targetMatrix.close();
-            hiddenInputs.close();
-            hiddenOutputs.close();
-            finalInputs.close();
-            finalOutputs.close();
-            outputErrors.close();
-            hiddenErrors.close();
-            currentHiddenToOutputsWeights.close();
-            currentInputToHiddenWeights.close();
         }
+
+        inputMatrix.close();
+        targetMatrix.close();
+        hiddenInputs.close();
+        hiddenOutputs.close();
+        finalOutputs.close();
+        outputErrors.close();
+        hiddenErrors.close();
+        currentHiddenToOutputsWeights.close();
+        currentInputToHiddenWeights.close();
     }
 
     private void adjustWeights(INDArray deltaInputsToHidden, INDArray deltaHiddenToOutputs) {
@@ -138,8 +142,14 @@ public class NeuralNetworkNd4j implements INeuralNetwork {
         INDArray hiddenInputs = inputToHiddenWeights.mmul(inputMatrix);
         INDArray hiddenOutputs = Transforms.sigmoid(hiddenInputs);
         INDArray finalInputs = hiddenToOutputsWeights.mmul(hiddenOutputs);
+        double[][] result = Transforms.sigmoid(finalInputs).toDoubleMatrix();
 
-        return Transforms.sigmoid(finalInputs).toDoubleMatrix();
+        inputMatrix.close();;
+        hiddenInputs.close();
+        hiddenOutputs.close();
+        finalInputs.close();
+
+        return result;
     }
 
     public void setWeightInitStrategy(WeightInitStrategy weightInitStrategy) {

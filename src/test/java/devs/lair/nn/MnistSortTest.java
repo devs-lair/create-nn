@@ -170,6 +170,47 @@ public class MnistSortTest {
                 StandardOpenOption.TRUNCATE_EXISTING);
     }
 
+    @Test
+    @DisplayName("Find groups")
+    @Disabled("Manual run")
+    void findAndReduceGroups() throws IOException {
+        List<int[]> records = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(Path.of("mnist-sorted-my-diff-0.csv"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] split = line.split(",");
+                records.add(convertLineToInputArray(split));
+            }
+        }
+
+        List<int[]> diffs = new ArrayList<>();
+
+        for (int i = 0; i < records.size() - 1; i++) {
+            int[] first = records.get(i);
+            int[] second = records.get(i + 1);
+            diffs.add(calculateArrayDiffWithPixelCount(first, second));
+        }
+
+        List<int[]> groups = new ArrayList<>();
+        groups.add(records.getFirst());
+        for (int i = 0; i < diffs.size(); i++) {
+            int[] diff = diffs.get(i);
+            if (diff[2] > 70) {
+                groups.add(records.get(i+1));
+            }
+        }
+
+        File forSave = new File("mnist-reduced-0.csv");
+
+        if (!forSave.exists()) {
+            Files.createFile(forSave.toPath());
+        }
+
+        Files.write(forSave.toPath(),
+                groups.stream().map(MnistSortTest::arrayToString).toList(),
+                StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
     private static @NotNull Comparator<int[]> byPixelComparator() {
         return (o1, o2) -> {
             int o1count = 0;
@@ -205,6 +246,20 @@ public class MnistSortTest {
         }
 
         return diff;
+    }
+
+    private int[] calculateArrayDiffWithPixelCount(int[] etalon, int[] compared) {
+        int diff = 0;
+        int pixelCount = 0;
+        for (int i = 0; i < etalon.length; i++) {
+            int pixelDiff = Math.abs(etalon[i] - compared[i]);
+            if (pixelDiff != 0) {
+                diff += pixelDiff;
+                pixelCount++;
+            }
+        }
+
+        return new int[]{diff, pixelCount, diff/pixelCount};
     }
 
 

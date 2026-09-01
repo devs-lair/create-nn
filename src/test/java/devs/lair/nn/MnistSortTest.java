@@ -196,7 +196,7 @@ public class MnistSortTest {
         for (int i = 0; i < diffs.size(); i++) {
             int[] diff = diffs.get(i);
             if (diff[2] > 70) {
-                groups.add(records.get(i+1));
+                groups.add(records.get(i + 1));
             }
         }
 
@@ -209,6 +209,60 @@ public class MnistSortTest {
         Files.write(forSave.toPath(),
                 groups.stream().map(MnistSortTest::arrayToString).toList(),
                 StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    @Test
+    @DisplayName("Calculate commons")
+    @Disabled("Manual run")
+    void calculateCommons() throws IOException {
+        List<int[]> records = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(Path.of("mnist-sorted-my-diff-3.csv"))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] split = line.split(",");
+                records.add(convertLineToInputArray(split));
+            }
+        }
+
+        int[][] common = new int[records.getFirst().length - 1][4];
+
+        for (int[] record : records) {
+            for (int i = 1; i < record.length; i++) {
+                int number = record[i];
+                if (number != 0) {
+                    common[i][0]++;
+                    common[i][1] += number;
+                    common[i][2] = common[i][1] / common[i][0];
+                }
+            }
+        }
+
+        StringBuilder sb = new StringBuilder("3,");
+        StringBuilder sb2 = new StringBuilder("3,");
+        double totalCount = records.size();
+        for (int[] ints : common) {
+            sb.append(ints[2]).append(",");
+            if (ints[0] == 0) {
+                sb2.append(0).append(",");
+            } else {
+                int probability = (int) ((ints[0] / totalCount) * 255);
+                sb2.append(probability).append(",");
+            }
+        }
+        sb.delete(sb.length() - 1, sb.length());
+        sb2.delete(sb2.length() - 1, sb2.length());
+
+
+        File forSave = new File("mnist-common-3.csv");
+
+        if (!forSave.exists()) {
+            Files.createFile(forSave.toPath());
+        }
+
+        Files.write(forSave.toPath(),
+                List.of(sb.toString(), sb2.toString()),
+                StandardOpenOption.TRUNCATE_EXISTING);
+
     }
 
     private static @NotNull Comparator<int[]> byPixelComparator() {
@@ -259,7 +313,7 @@ public class MnistSortTest {
             }
         }
 
-        return new int[]{diff, pixelCount, diff/pixelCount};
+        return new int[]{diff, pixelCount, diff / pixelCount};
     }
 
 

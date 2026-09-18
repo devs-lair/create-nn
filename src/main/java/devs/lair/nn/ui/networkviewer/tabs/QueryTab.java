@@ -1,6 +1,6 @@
 package devs.lair.nn.ui.networkviewer.tabs;
 
-import devs.lair.nn.NeuralNetwork;
+import devs.lair.nn.INeuralNetwork;
 import devs.lair.nn.ui.networkviewer.DrawingPanel;
 import devs.lair.nn.util.ImageUtils;
 import org.jetbrains.annotations.NotNull;
@@ -11,7 +11,7 @@ import java.awt.*;
 import java.awt.image.*;
 
 public class QueryTab extends JPanel {
-    private final NeuralNetwork nn;
+    private final INeuralNetwork nn;
 
     private final JButton correctButton;
     private final JButton incorrectButton;
@@ -21,7 +21,7 @@ public class QueryTab extends JPanel {
     private int totalQuery = 0;
     private int correct = 0;
 
-    public QueryTab(@NotNull NeuralNetwork nn) {
+    public QueryTab(@NotNull INeuralNetwork nn) {
         setLayout(new BoxLayout(this, BoxLayout.X_AXIS));
 
         this.nn = nn;

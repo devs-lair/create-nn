@@ -107,7 +107,7 @@ public class MnistSortTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {2, 3, 4, 5, 6, 7, 8, 9})
+    @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
     @Disabled("Manual run")
     @DisplayName("Sort by my diffs")
     void sortBySpecialDiff(int number) throws IOException {
@@ -142,7 +142,7 @@ public class MnistSortTest {
                 if (used.contains(j)) {
                     continue;
                 }
-                diffs.add(new DiffRecord(calculateArrayDiff(etalon, records.get(j)), j));
+                diffs.add(new DiffRecord(DiffUtils.calculateArrayDiff(etalon, records.get(j)), j));
             }
 
             List<DiffRecord> sorted = diffs.stream()
@@ -160,6 +160,129 @@ public class MnistSortTest {
         }
 
         File forSave = new File("mnist-sorted-my-diff-" + number + ".csv");
+
+        if (!forSave.exists()) {
+            Files.createFile(forSave.toPath());
+        }
+
+        Files.write(forSave.toPath(),
+                reorder.stream().map(MnistSortTest::arrayToString).toList(),
+                StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
+    @Disabled("Manual run")
+    @DisplayName("Sort by euclid distance")
+    void sortByEuclidDistance(int number) throws IOException {
+        URL file = MnistCsvViewer.class.getResource("/mnist/mnist_train.csv");
+        assertThat(file).isNotNull();
+
+        List<int[]> records = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(file.getFile()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] split = line.split(",");
+
+                int[] record = convertLineToInputArray(split);
+                if (record[0] == number) {
+                    records.add(record);
+                }
+            }
+        }
+
+        records = records.stream().sorted(byEuclidDistance()).toList();
+
+        List<Integer> used = new ArrayList<>();
+        List<DiffRecord> diffs = new ArrayList<>();
+        List<int[]> reorder = new ArrayList<>();
+        reorder.add(records.getFirst());
+        used.add(0);
+        int[] etalon = records.getFirst();
+
+        for (int i = 1; i < records.size(); i++) {
+            diffs.clear();
+            for (int j = 1; j < records.size(); j++) {
+                if (used.contains(j)) {
+                    continue;
+                }
+                diffs.add(new DiffRecord(DiffUtils.calculateEuclidDistance(etalon, records.get(j)), j));
+            }
+
+            List<DiffRecord> sorted = diffs.stream()
+                    .sorted(Comparator.comparingInt(DiffRecord::diff)).toList();
+
+            if (!sorted.isEmpty()) {
+                int[] same = records.get(sorted.getFirst().index());
+                used.add(sorted.getFirst().index());
+                reorder.add(same);
+                etalon = same;
+            } else {
+                //it's last
+                reorder.add(etalon);
+            }
+        }
+
+        File forSave = new File("mnist-sorted-euclid-distance-" + number + ".csv");
+
+        if (!forSave.exists()) {
+            Files.createFile(forSave.toPath());
+        }
+
+        Files.write(forSave.toPath(),
+                reorder.stream().map(MnistSortTest::arrayToString).toList(),
+                StandardOpenOption.TRUNCATE_EXISTING);
+    }
+
+    @Test
+    @Disabled("Manual run")
+    @DisplayName("Sort test data set by my diffs")
+    void sortTestDatasetDiff() throws IOException {
+        URL file = MnistCsvViewer.class.getResource("/mnist/mnist_test.csv");
+        assertThat(file).isNotNull();
+
+        List<int[]> records = new ArrayList<>();
+        try (BufferedReader reader = Files.newBufferedReader(Path.of(file.getFile()))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String[] split = line.split(",");
+                records.add(convertLineToInputArray(split));
+            }
+        }
+
+        records = records.stream().sorted(byEuclidDistance()).toList();
+
+        List<Integer> used = new ArrayList<>();
+        List<DiffRecord> diffs = new ArrayList<>();
+        List<int[]> reorder = new ArrayList<>();
+        reorder.add(records.getFirst());
+        used.add(0);
+        int[] etalon = records.getFirst();
+
+        for (int i = 1; i < records.size(); i++) {
+            diffs.clear();
+            for (int j = 1; j < records.size(); j++) {
+                if (used.contains(j)) {
+                    continue;
+                }
+                diffs.add(new DiffRecord(DiffUtils.calculateEuclidDistance(etalon, records.get(j)), j));
+            }
+
+            List<DiffRecord> sorted = diffs.stream()
+                    .sorted(Comparator.comparingInt(DiffRecord::diff)).toList();
+
+            if (!sorted.isEmpty()) {
+                int[] same = records.get(sorted.getFirst().index());
+                used.add(sorted.getFirst().index());
+                reorder.add(same);
+                etalon = same;
+            } else {
+                //it's last
+                reorder.add(etalon);
+            }
+        }
+
+        File forSave = new File("mnist-sorted-train-diff.csv");
 
         if (!forSave.exists()) {
             Files.createFile(forSave.toPath());
@@ -188,7 +311,7 @@ public class MnistSortTest {
         for (int i = 0; i < records.size() - 1; i++) {
             int[] first = records.get(i);
             int[] second = records.get(i + 1);
-            diffs.add(calculateArrayDiffWithPixelCount(first, second));
+            diffs.add(DiffUtils.calculateArrayDiffWithPixelCount(first, second));
         }
 
         List<int[]> groups = new ArrayList<>();
@@ -211,12 +334,13 @@ public class MnistSortTest {
                 StandardOpenOption.TRUNCATE_EXISTING);
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(ints = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9})
     @DisplayName("Calculate commons")
     @Disabled("Manual run")
-    void calculateCommons() throws IOException {
+    void calculateCommons(int number) throws IOException {
         List<int[]> records = new ArrayList<>();
-        try (BufferedReader reader = Files.newBufferedReader(Path.of("mnist-sorted-my-diff-3.csv"))) {
+        try (BufferedReader reader = Files.newBufferedReader(Path.of("mnist-sorted-my-diff-" + number + ".csv"))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String[] split = line.split(",");
@@ -228,20 +352,26 @@ public class MnistSortTest {
 
         for (int[] record : records) {
             for (int i = 1; i < record.length; i++) {
-                int number = record[i];
-                if (number != 0) {
+                int current = record[i];
+                if (current != 0) {
                     common[i][0]++;
-                    common[i][1] += number;
+                    common[i][1] += current;
                     common[i][2] = common[i][1] / common[i][0];
                 }
             }
         }
 
-        StringBuilder sb = new StringBuilder("3,");
-        StringBuilder sb2 = new StringBuilder("3,");
+        StringBuilder sb = new StringBuilder().append(number).append(",");
+        StringBuilder sb2 = new StringBuilder().append(number).append(",");
         double totalCount = records.size();
         for (int[] ints : common) {
-            sb.append(ints[2]).append(",");
+            if (ints[1] == 0) {
+                sb.append(0).append(",");
+            } else {
+                int meanColor = (int) ((ints[1] / totalCount));
+                sb.append(meanColor).append(",");
+            }
+
             if (ints[0] == 0) {
                 sb2.append(0).append(",");
             } else {
@@ -252,8 +382,7 @@ public class MnistSortTest {
         sb.delete(sb.length() - 1, sb.length());
         sb2.delete(sb2.length() - 1, sb2.length());
 
-
-        File forSave = new File("mnist-common-3.csv");
+        File forSave = new File("mnist-common-" + number + ".csv");
 
         if (!forSave.exists()) {
             Files.createFile(forSave.toPath());
@@ -284,6 +413,15 @@ public class MnistSortTest {
         };
     }
 
+    private static @NotNull Comparator<int[]> byEuclidDistance() {
+        return (o1, o2) -> {
+            int diff1 = DiffUtils.calculateEuclidDistance(o1, new int[o1.length]);
+            int diff2 = DiffUtils.calculateEuclidDistance(o2, new int[o2.length]);
+
+            return Integer.compare(diff1, diff2);
+        };
+    }
+
     private static @NotNull String arrayToString(int[] d) {
         StringBuilder sb = new StringBuilder();
         for (int v : d) {
@@ -292,30 +430,6 @@ public class MnistSortTest {
         sb.delete(sb.length() - 1, sb.length());
         return sb.toString();
     }
-
-    private int calculateArrayDiff(int[] etalon, int[] compared) {
-        int diff = 0;
-        for (int i = 0; i < etalon.length; i++) {
-            diff += Math.abs(etalon[i] - compared[i]);
-        }
-
-        return diff;
-    }
-
-    private int[] calculateArrayDiffWithPixelCount(int[] etalon, int[] compared) {
-        int diff = 0;
-        int pixelCount = 0;
-        for (int i = 0; i < etalon.length; i++) {
-            int pixelDiff = Math.abs(etalon[i] - compared[i]);
-            if (pixelDiff != 0) {
-                diff += pixelDiff;
-                pixelCount++;
-            }
-        }
-
-        return new int[]{diff, pixelCount, diff / pixelCount};
-    }
-
 
     private static int[] convertLineToInputArray(String[] split) {
         int[] result = new int[split.length];

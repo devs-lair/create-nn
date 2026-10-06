@@ -33,8 +33,22 @@ public class DiffUtils {
                 .min().orElse(Integer.MAX_VALUE);
     }
 
+    public static double min(double... numbers) {
+        return Arrays.stream(numbers)
+                .min().orElse(Double.MAX_VALUE);
+    }
+
     public static int calculateArrayDiff(int[] etalon, int[] compared) {
         int diff = 0;
+        for (int i = 0; i < etalon.length; i++) {
+            diff += Math.abs(etalon[i] - compared[i]);
+        }
+
+        return diff;
+    }
+
+    public static double calculateArrayDiff(double[] etalon, double[] compared) {
+        double diff = 0;
         for (int i = 0; i < etalon.length; i++) {
             diff += Math.abs(etalon[i] - compared[i]);
         }
@@ -51,6 +65,16 @@ public class DiffUtils {
         }
 
         return (int) Math.pow(diff, 0.5);
+    }
+
+    public static double calculateEuclidDistance(double[] etalon, double[] compared) {
+        double diff = 0;
+
+        for (int i = 0; i < etalon.length; i++) {
+            diff += Math.pow(etalon[i] - compared[i], 2);
+        }
+
+        return Math.pow(diff, 0.5);
     }
 
     public static int[] calculateArrayDiffWithPixelCount(int[] etalon, int[] compared) {

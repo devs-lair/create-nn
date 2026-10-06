@@ -1,4 +1,5 @@
-import devs.lair.nn.*;
+package devs.lair.nn;
+
 import devs.lair.nn.ui.MnistCsvViewer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;

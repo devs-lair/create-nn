@@ -210,8 +210,11 @@ public class NetworkTrainer {
                 maxIndex = i;
             }
         }
-
-        return maxIndex;
+        if (max < 0.5) {
+            return -1;
+        } else {
+            return maxIndex;
+        }
     }
 
     private static double[] convertLineToInputArray(String[] split) {
